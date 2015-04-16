@@ -11,6 +11,7 @@ libsmie_la_SOURCES =				\
 
 libsmie_la_CFLAGS = $(DEPS_CFLAGS)
 libsmie_la_LIBADD = $(DEPS_LIBS)
+libsmie_la_LDFLAGS = -no-undefined -export-symbols-regex '^smie_'
 
 check_PROGRAMS = test-grammar
 test_grammar_SOURCES = test-grammar.c
