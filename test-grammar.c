@@ -1,6 +1,33 @@
-#include "config.h"
+/*
+ * Copyright (C) 2015 Daiki Ueno
+ *
+ * This program is free software: you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see
+ * <http://www.gnu.org/licenses/>.
+ */
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include "smie-grammar.h"
+#include <glib/gprintf.h>
 #include <string.h>
+
+extern void
+smie_debug_dump_prec2_grammar (struct smie_prec2_grammar_t *grammar);
+extern void
+smie_debug_dump_precs_grammar (struct smie_precs_grammar_t *grammar);
 
 static smie_bnf_grammar_t *
 populate_bnf_grammar (smie_symbol_pool_t *pool)
@@ -81,7 +108,6 @@ test_previous_token (gchar **tokenp, goffset *offsetp, gpointer user_data)
 {
   goffset offset = *offsetp;
   gchar *input = user_data;
-  gsize length = strlen (input);
   for (; offset >= 0; offset--)
     if (!g_ascii_isspace (input[offset]))
       break;
@@ -128,11 +154,11 @@ f: N | \"(\" e \")\";");
 
   offset = 1;
   smie_forward_sexp (precs, &offset, test_next_token, "# ( 4 + ( 5 x 6 ) + 7 ) + 8 #");
-  g_printf ("%d\n", offset);
+  g_printf ("%zd\n", offset);
 
   offset = 23;
   smie_backward_sexp (precs, &offset, test_previous_token, "# ( 4 + ( 5 x 6 ) + 7 ) + 8 #");
-  g_printf ("%d\n", offset);
+  g_printf ("%zd\n", offset);
 
   smie_precs_grammar_free (precs);
   smie_symbol_pool_free (pool);

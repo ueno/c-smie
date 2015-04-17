@@ -20,6 +20,8 @@
 #include <config.h>
 #endif
 
+#include <glib/gprintf.h>
+#include <string.h>
 #include "smie-grammar.h"
 #include "smie-gram-gen.h"
 
@@ -235,6 +237,7 @@ smie_bnf_grammar_add_rule (struct smie_bnf_grammar_t *bnf, GList *symbols)
     }
 
   rules->rules = g_list_append (rules->rules, smie_rule_alloc (symbols));
+  return TRUE;
 }
 
 static guint
@@ -341,7 +344,6 @@ smie_bnf_grammar_build_op_set (struct smie_bnf_grammar_t *bnf,
       struct smie_symbol_t *a = key;
       struct smie_rule_list_t *rules = value;
       GList *l;
-      struct smie_rule_t *rule;
       GHashTable *op_a = g_hash_table_new (smie_symbol_hash, smie_symbol_equal);
 
       for (l = rules->rules; l; l = l->next)
@@ -375,7 +377,7 @@ smie_bnf_grammar_build_op_set (struct smie_bnf_grammar_t *bnf,
 		}
 	    }
 	}
-      g_hash_table_insert (op, key, op_a);
+      g_hash_table_insert (op, a, op_a);
     }
 
   /* Loop until all the elements of OP are fixed.  */
@@ -416,6 +418,7 @@ smie_bnf_grammar_build_op_set (struct smie_bnf_grammar_t *bnf,
   return op;
 }
 
+#ifdef DEBUG
 static void
 smie_debug_dump_op_set (GHashTable *op, const char *name)
 {
@@ -438,6 +441,7 @@ smie_debug_dump_op_set (GHashTable *op, const char *name)
       g_printf ("\n");
     }
 }
+#endif
 
 gboolean
 smie_bnf_to_prec2 (struct smie_bnf_grammar_t *bnf,
@@ -585,6 +589,7 @@ smie_func_hash (gconstpointer key)
   return hash;
 }
 
+#ifdef DEBUG
 static gchar *
 smie_debug_func_name (const struct smie_func_t *func)
 {
@@ -638,6 +643,7 @@ smie_debug_dump_assigned (GHashTable *assigned)
       g_free (f_name);
     }
 }
+#endif
 
 void
 smie_debug_dump_precs_grammar (struct smie_precs_grammar_t *grammar)
@@ -671,6 +677,7 @@ smie_func_equal (gconstpointer a, gconstpointer b)
       return smie_func_equal (fa->u.composed.f, fb->u.composed.f)
 	&& smie_func_equal (fa->u.composed.g, fb->u.composed.g);
     }
+  return FALSE;
 }
 
 static struct smie_func2_t *
@@ -718,7 +725,6 @@ smie_prec2_to_precs (struct smie_prec2_grammar_t *prec2,
   while (g_hash_table_iter_next (&iter, &key, NULL))
     {
       struct smie_prec2_t *p2 = key;
-      struct smie_symbol_t *ab;
       struct smie_func_t func, *f, *g, *fg;
 
       func.u.symbol = p2->left;
@@ -884,6 +890,8 @@ smie_prec2_to_precs (struct smie_prec2_grammar_t *prec2,
 	case SMIE_FUNC_G:
 	  prec->right_prec = GPOINTER_TO_INT (value);
 	  break;
+	default:
+	  g_assert_not_reached ();
 	}
     }
   g_hash_table_destroy (assigned);
@@ -966,7 +974,6 @@ smie_precs_next_sexp (struct smie_precs_grammar_t *grammar,
 		}
 	      else
 		{
-		  GList *stack2 = stack;
 		  struct smie_prec_t *prec2 = stack->data;
 		  gint prec_value2;
 		  op_backward (prec, &prec_value);
