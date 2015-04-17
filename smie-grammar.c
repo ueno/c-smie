@@ -915,22 +915,46 @@ smie_select_right (struct smie_prec_t *prec, gint *precp)
   return prec->right_is_parenthesis;
 }
 
+enum smie_direction_t
+  {
+    SMIE_DIRECTION_FORWARD,
+    SMIE_DIRECTION_BACKWARD
+  };
+
 static gboolean
-smie_precs_next_sexp (struct smie_precs_grammar_t *grammar,
+smie_next_sexp (struct smie_precs_grammar_t *grammar,
+		      enum smie_direction_t direction,
 		      goffset *offsetp,
-		      smie_advance_function_t next_token,
-		      gpointer callback,
-		      smie_select_function_t op_forward,
-		      smie_select_function_t op_backward)
+		      smie_advance_function_t advance_func,
+		      smie_read_function_t read_func,
+		      gpointer callback)
 {
   goffset offset = *offsetp;
   GList *stack = NULL;
+  smie_select_function_t op_forward;
+  smie_select_function_t op_backward;
+  gint count;
+
+  switch (direction)
+    {
+    case SMIE_DIRECTION_FORWARD:
+      op_forward = smie_select_right;
+      op_backward = smie_select_left;
+      count = 1;
+      break;
+    case SMIE_DIRECTION_BACKWARD:
+      op_forward = smie_select_left;
+      op_backward = smie_select_right;
+      count = -1;
+      break;
+    }
 
   while (TRUE)
     {
       goffset offset2 = offset;
       gchar *token;
-      if (!next_token (&token, &offset, callback))
+      if (!advance_func (SMIE_ADVANCE_TOKEN, count, &offset, callback) ||
+	  !read_func (&token, offset, callback))
 	{
 	  *offsetp = offset;
 	  return FALSE;
@@ -999,23 +1023,31 @@ smie_precs_next_sexp (struct smie_precs_grammar_t *grammar,
 gboolean
 smie_forward_sexp (struct smie_precs_grammar_t *grammar,
 		   goffset *offsetp,
-		   smie_advance_function_t next_token,
+		   smie_advance_function_t advance_func,
+		   smie_read_function_t read_func,
 		   gpointer callback)
 {
-  return smie_precs_next_sexp (grammar, offsetp, next_token, callback,
-			       smie_select_right,
-			       smie_select_left);
+  return smie_next_sexp (grammar,
+			 SMIE_DIRECTION_FORWARD,
+			 offsetp,
+			 advance_func,
+			 read_func,
+			 callback);
 }
 
 gboolean
 smie_backward_sexp (struct smie_precs_grammar_t *grammar,
 		    goffset *offsetp,
-		    smie_advance_function_t next_token,
+		    smie_advance_function_t advance_func,
+		    smie_read_function_t read_func,
 		    gpointer callback)
 {
-  return smie_precs_next_sexp (grammar, offsetp, next_token, callback,
-			       smie_select_left,
-			       smie_select_right);
+  return smie_next_sexp (grammar,
+			 SMIE_DIRECTION_BACKWARD,
+			 offsetp,
+			 advance_func,
+			 read_func,
+			 callback);
 }
 
 struct smie_bnf_grammar_t *

@@ -73,16 +73,29 @@ gboolean smie_bnf_to_prec2 (smie_bnf_grammar_t *bnf,
 gboolean smie_prec2_to_precs (smie_prec2_grammar_t *prec2,
 			      smie_precs_grammar_t *precs);
 
-typedef gboolean (*smie_advance_function_t) (gchar **, goffset *, gpointer);
+typedef enum smie_advance_step_t smie_advance_step_t;
+enum smie_advance_step_t
+  {
+    SMIE_ADVANCE_CHAR,
+    SMIE_ADVANCE_LINE,
+    SMIE_ADVANCE_LINE_ENDS,
+    SMIE_ADVANCE_TOKEN
+  };
+
+typedef gboolean (*smie_advance_function_t) (smie_advance_step_t, gint,
+					     goffset *, gpointer);
+typedef gboolean (*smie_read_function_t) (gchar **, goffset, gpointer);
 
 gboolean smie_forward_sexp (smie_precs_grammar_t *grammar,
 			    goffset *offsetp,
-			    smie_advance_function_t next_token,
+			    smie_advance_function_t advance_func,
+			    smie_read_function_t read_func,
 			    gpointer callback);
 
 gboolean smie_backward_sexp (smie_precs_grammar_t *grammar,
 			     goffset *offsetp,
-			     smie_advance_function_t next_token,
+			     smie_advance_function_t advance_func,
+			     smie_read_function_t read_func,
 			     gpointer callback);
 
 G_END_DECLS
