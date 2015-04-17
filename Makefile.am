@@ -3,12 +3,15 @@ AM_YFLAGS = -d
 
 BUILT_SOURCES = smie-gram-gen.h
 
+include_HEADERS =				\
+	smie-grammar.h				\
+	smie-indenter.h				\
+	smie.h
+
 lib_LTLIBRARIES = libsmie.la
 libsmie_la_SOURCES =				\
-	smie-grammar.h				\
 	smie-grammar.c				\
 	smie-gram-gen.y				\
-	smie-indenter.h				\
 	smie-indenter.c
 
 libsmie_la_CFLAGS = $(DEPS_CFLAGS)
