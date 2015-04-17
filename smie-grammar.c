@@ -923,13 +923,11 @@ enum smie_direction_t
 
 static gboolean
 smie_next_sexp (struct smie_precs_grammar_t *grammar,
-		      enum smie_direction_t direction,
-		      goffset *offsetp,
-		      smie_advance_function_t advance_func,
-		      smie_read_function_t read_func,
-		      gpointer callback)
+		enum smie_direction_t direction,
+		smie_advance_function_t advance_func,
+		smie_read_function_t read_func,
+		gpointer callback)
 {
-  goffset offset = *offsetp;
   GList *stack = NULL;
   smie_select_function_t op_forward;
   smie_select_function_t op_backward;
@@ -951,70 +949,52 @@ smie_next_sexp (struct smie_precs_grammar_t *grammar,
 
   while (TRUE)
     {
-      goffset offset2 = offset;
       gchar *token;
-      if (!advance_func (SMIE_ADVANCE_TOKEN, count, &offset, callback) ||
-	  !read_func (&token, offset, callback))
-	{
-	  *offsetp = offset;
-	  return FALSE;
-	}
+      struct smie_symbol_t symbol;
+      struct smie_prec_t *prec;
+      gint prec_value;
+
+      if (!advance_func (SMIE_ADVANCE_TOKEN, count, callback)
+	  || !read_func (&token, callback))
+	return FALSE;
+
+      symbol.name = token;
+      symbol.type = SMIE_SYMBOL_TERMINAL;
+      prec = g_hash_table_lookup (grammar->precs, &symbol);
+      g_free (token);
+      if (!prec)
+	continue;
+      else if (op_backward (prec, &prec_value))
+	stack = g_list_prepend (stack, prec);
       else
 	{
-	  struct smie_symbol_t symbol;
-	  struct smie_prec_t *prec;
-	  gint prec_value;
-
-	  symbol.name = token;
-	  symbol.type = SMIE_SYMBOL_TERMINAL;
-	  prec = g_hash_table_lookup (grammar->precs, &symbol);
-	  g_free (token);
-	  if (!prec)
+	  while (stack)
 	    {
-	      if (offset == offset2)
-		{
-		  *offsetp = offset;
-		  return FALSE;
-		}
+	      struct smie_prec_t *prec2 = stack->data;
+	      gint prec_value2;
+	      op_forward (prec, &prec_value);
+	      op_backward (prec2, &prec_value2);
+	      if (prec_value >= prec_value2)
+		break;
+	      stack = g_list_delete_link (stack, stack);
 	    }
-	  else if (op_backward (prec, &prec_value))
-	    stack = g_list_prepend (stack, prec);
+	  if (!stack)
+	    return TRUE;
 	  else
 	    {
-	      while (stack)
+	      struct smie_prec_t *prec2 = stack->data;
+	      gint prec_value2;
+	      op_backward (prec, &prec_value);
+	      op_forward (prec2, &prec_value2);
+	      if (prec_value == prec_value2)
+		stack = g_list_delete_link (stack, stack);
+	      if (stack)
 		{
-		  struct smie_prec_t *prec2 = stack->data;
-		  gint prec_value2;
-		  op_forward (prec, &prec_value);
-		  op_backward (prec2, &prec_value2);
-		  if (prec_value >= prec_value2)
-		    break;
-		  stack = g_list_delete_link (stack, stack);
+		  if (!op_forward (prec, &prec_value))
+		    stack = g_list_prepend (stack, prec);
 		}
-	      if (!stack)
-		{
-		  *offsetp = offset;
-		  return TRUE;
-		}
-	      else
-		{
-		  struct smie_prec_t *prec2 = stack->data;
-		  gint prec_value2;
-		  op_backward (prec, &prec_value);
-		  op_forward (prec2, &prec_value2);
-		  if (prec_value == prec_value2)
-		    stack = g_list_delete_link (stack, stack);
-		  if (stack)
-		    {
-		      if (!op_forward (prec, &prec_value))
-			stack = g_list_prepend (stack, prec);
-		    }
-		  else if (op_forward (prec, &prec_value))
-		    {
-		      *offsetp = offset;
-		      return FALSE;
-		    }
-		}
+	      else if (op_forward (prec, &prec_value))
+		return FALSE;
 	    }
 	}
     }
@@ -1022,14 +1002,12 @@ smie_next_sexp (struct smie_precs_grammar_t *grammar,
 
 gboolean
 smie_forward_sexp (struct smie_precs_grammar_t *grammar,
-		   goffset *offsetp,
 		   smie_advance_function_t advance_func,
 		   smie_read_function_t read_func,
 		   gpointer callback)
 {
   return smie_next_sexp (grammar,
 			 SMIE_DIRECTION_FORWARD,
-			 offsetp,
 			 advance_func,
 			 read_func,
 			 callback);
@@ -1037,14 +1015,12 @@ smie_forward_sexp (struct smie_precs_grammar_t *grammar,
 
 gboolean
 smie_backward_sexp (struct smie_precs_grammar_t *grammar,
-		    goffset *offsetp,
 		    smie_advance_function_t advance_func,
 		    smie_read_function_t read_func,
 		    gpointer callback)
 {
   return smie_next_sexp (grammar,
 			 SMIE_DIRECTION_BACKWARD,
-			 offsetp,
 			 advance_func,
 			 read_func,
 			 callback);

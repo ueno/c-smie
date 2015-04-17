@@ -81,12 +81,18 @@ populate_bnf_grammar (smie_symbol_pool_t *pool)
   return grammar;
 }
 
+struct data
+{
+  const gchar *input;
+  goffset offset;
+};
+
 static goffset
 forward_token (goffset offset, const gchar *input)
 {
-  while (input[offset] != '\0' && g_ascii_isspace (input[offset]))
-    offset++;
   while (input[offset] != '\0' && !g_ascii_isspace (input[offset]))
+    offset++;
+  while (input[offset] != '\0' && g_ascii_isspace (input[offset]))
     offset++;
   return offset;
 }
@@ -94,46 +100,50 @@ forward_token (goffset offset, const gchar *input)
 static goffset
 backward_token (goffset offset, const gchar *input)
 {
-  while (offset >= 0 && g_ascii_isspace (input[offset]))
-    offset--;
   while (offset >= 0 && !g_ascii_isspace (input[offset]))
+    offset--;
+  while (offset >= 0 && g_ascii_isspace (input[offset]))
     offset--;
   return offset;
 }
 
 static gboolean
-advance_func (smie_advance_step_t step, gint count, goffset *offsetp,
-	      gpointer user_data)
+advance_func (smie_advance_step_t step, gint count, gpointer user_data)
 {
-  gchar *input = user_data;
-  goffset offset = *offsetp;
+  struct data *data = user_data;
+  goffset offset = data->offset;
+  gboolean result;
   switch (step)
     {
     case SMIE_ADVANCE_TOKEN:
       if (count > 0)
 	for (; count > 0; count--)
-	  offset = forward_token (offset, input);
+	  offset = forward_token (offset, data->input);
       else
 	for (; count < 0; count++)
-	  offset = backward_token (offset, input);
-      return offset != *offsetp;
-      break;
+	  offset = backward_token (offset, data->input);
+      result = offset != data->offset;
+      data->offset = offset;
+      return result;
     default:
       g_return_val_if_reached (FALSE);
     }
 }
 
 static gboolean
-read_func (gchar **token, goffset offset, gpointer user_data)
+read_func (gchar **token, gpointer user_data)
 {
-  gchar *input = user_data;
+  struct data *data = user_data;
   goffset end_offset;
-  if (input[offset] == '\0' || g_ascii_isspace (input[offset]))
+  if (data->offset < 0
+      || data->input[data->offset] == '\0'
+      || g_ascii_isspace (data->input[data->offset]))
     return FALSE;
-  end_offset = offset;
-  while (input[end_offset] != '\0' && !g_ascii_isspace (input[end_offset]))
+  end_offset = data->offset;
+  while (data->input[end_offset] != '\0'
+	 && !g_ascii_isspace (data->input[end_offset]))
     end_offset++;
-  *token = g_strndup (&input[offset], end_offset - offset);
+  *token = g_strndup (&data->input[data->offset], end_offset - data->offset);
   return TRUE;
 }
 
@@ -144,7 +154,7 @@ main (void)
   smie_bnf_grammar_t *bnf = populate_bnf_grammar (pool);
   smie_prec2_grammar_t *prec2 = smie_prec2_grammar_alloc ();
   smie_precs_grammar_t *precs = smie_precs_grammar_alloc ();
-  goffset offset;
+  struct data data;
 
   smie_bnf_grammar_t *bnf2;
   bnf2 = smie_bnf_grammar_from_string (pool, "\
@@ -160,21 +170,21 @@ f: N | \"(\" e \")\";");
   smie_debug_dump_precs_grammar (precs);
 
 #if 0
-  offset = 0;
-  smie_forward_sexp (precs, &offset, advance_func, read_func,
-		     "# 4 + 5 x 6 + 8 #");
-  g_printf ("%d\n", offset);
+  data.input = "# 4 + 5 x 6 + 8 #"
+  data.offset = 0;
+  smie_forward_sexp (precs, advance_func, read_func, &data);
+  g_printf ("%d\n", data.offset);
 #endif
 
-  offset = 1;
-  smie_forward_sexp (precs, &offset, advance_func, read_func,
-		     "# ( 4 + ( 5 x 6 ) + 7 ) + 8 #");
-  g_printf ("%zd\n", offset);
+  data.input = "# ( 4 + ( 5 x 6 ) + 7 ) + 8 #";
+  data.offset = 1;
+  smie_forward_sexp (precs, advance_func, read_func, &data);
+  g_printf ("%zd\n", data.offset);
 
-  offset = 23;
-  smie_backward_sexp (precs, &offset, advance_func, read_func,
-		      "# ( 4 + ( 5 x 6 ) + 7 ) + 8 #");
-  g_printf ("%zd\n", offset);
+  data.input = "# ( 4 + ( 5 x 6 ) + 7 ) + 8 #";
+  data.offset = 23;
+  smie_backward_sexp (precs, advance_func, read_func, &data);
+  g_printf ("%zd\n", data.offset);
 
   smie_precs_grammar_free (precs);
   smie_symbol_pool_free (pool);

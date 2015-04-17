@@ -83,17 +83,15 @@ enum smie_advance_step_t
   };
 
 typedef gboolean (*smie_advance_function_t) (smie_advance_step_t, gint,
-					     goffset *, gpointer);
-typedef gboolean (*smie_read_function_t) (gchar **, goffset, gpointer);
+					     gpointer);
+typedef gboolean (*smie_read_function_t) (gchar **, gpointer);
 
 gboolean smie_forward_sexp (smie_precs_grammar_t *grammar,
-			    goffset *offsetp,
 			    smie_advance_function_t advance_func,
 			    smie_read_function_t read_func,
 			    gpointer callback);
 
 gboolean smie_backward_sexp (smie_precs_grammar_t *grammar,
-			     goffset *offsetp,
 			     smie_advance_function_t advance_func,
 			     smie_read_function_t read_func,
 			     gpointer callback);
