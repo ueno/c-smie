@@ -3,52 +3,52 @@
 #include <string.h>
 
 static smie_bnf_grammar_t *
-populate_bnf_grammar (void)
+populate_bnf_grammar (smie_symbol_pool_t *pool)
 {
   smie_bnf_grammar_t *grammar = smie_bnf_grammar_alloc ();
   GList *rule;
 
   /* S -> "#" E "#" */
-  rule = g_list_append (NULL, smie_symbol_alloc ("S", SMIE_SYMBOL_NON_TERMINAL));
-  rule = g_list_append (rule, smie_symbol_alloc ("#", SMIE_SYMBOL_TERMINAL));
-  rule = g_list_append (rule, smie_symbol_alloc ("E", SMIE_SYMBOL_NON_TERMINAL));
-  rule = g_list_append (rule, smie_symbol_alloc ("#", SMIE_SYMBOL_TERMINAL));
+  rule = g_list_append (NULL, (gpointer) smie_symbol_intern (pool, "S", SMIE_SYMBOL_NON_TERMINAL));
+  rule = g_list_append (rule, (gpointer) smie_symbol_intern (pool, "#", SMIE_SYMBOL_TERMINAL));
+  rule = g_list_append (rule, (gpointer) smie_symbol_intern (pool, "E", SMIE_SYMBOL_NON_TERMINAL));
+  rule = g_list_append (rule, (gpointer) smie_symbol_intern (pool, "#", SMIE_SYMBOL_TERMINAL));
   smie_bnf_grammar_add_rule (grammar, rule);
 
   /* E -> E "+" T */
-  rule = g_list_append (NULL, smie_symbol_alloc ("E", SMIE_SYMBOL_NON_TERMINAL));
-  rule = g_list_append (rule, smie_symbol_alloc ("E", SMIE_SYMBOL_NON_TERMINAL));
-  rule = g_list_append (rule, smie_symbol_alloc ("+", SMIE_SYMBOL_TERMINAL));
-  rule = g_list_append (rule, smie_symbol_alloc ("T", SMIE_SYMBOL_NON_TERMINAL));
+  rule = g_list_append (NULL, (gpointer) smie_symbol_intern (pool, "E", SMIE_SYMBOL_NON_TERMINAL));
+  rule = g_list_append (rule, (gpointer) smie_symbol_intern (pool, "E", SMIE_SYMBOL_NON_TERMINAL));
+  rule = g_list_append (rule, (gpointer) smie_symbol_intern (pool, "+", SMIE_SYMBOL_TERMINAL));
+  rule = g_list_append (rule, (gpointer) smie_symbol_intern (pool, "T", SMIE_SYMBOL_NON_TERMINAL));
   smie_bnf_grammar_add_rule (grammar, rule);
 
   /* E -> T */
-  rule = g_list_append (NULL, smie_symbol_alloc ("E", SMIE_SYMBOL_NON_TERMINAL));
-  rule = g_list_append (rule, smie_symbol_alloc ("T", SMIE_SYMBOL_NON_TERMINAL));
+  rule = g_list_append (NULL, (gpointer) smie_symbol_intern (pool, "E", SMIE_SYMBOL_NON_TERMINAL));
+  rule = g_list_append (rule, (gpointer) smie_symbol_intern (pool, "T", SMIE_SYMBOL_NON_TERMINAL));
   smie_bnf_grammar_add_rule (grammar, rule);
 
   /* T -> T "x" F */
-  rule = g_list_append (NULL, smie_symbol_alloc ("T", SMIE_SYMBOL_NON_TERMINAL));
-  rule = g_list_append (rule, smie_symbol_alloc ("T", SMIE_SYMBOL_NON_TERMINAL));
-  rule = g_list_append (rule, smie_symbol_alloc ("x", SMIE_SYMBOL_TERMINAL));
-  rule = g_list_append (rule, smie_symbol_alloc ("F", SMIE_SYMBOL_NON_TERMINAL));
+  rule = g_list_append (NULL, (gpointer) smie_symbol_intern (pool, "T", SMIE_SYMBOL_NON_TERMINAL));
+  rule = g_list_append (rule, (gpointer) smie_symbol_intern (pool, "T", SMIE_SYMBOL_NON_TERMINAL));
+  rule = g_list_append (rule, (gpointer) smie_symbol_intern (pool, "x", SMIE_SYMBOL_TERMINAL));
+  rule = g_list_append (rule, (gpointer) smie_symbol_intern (pool, "F", SMIE_SYMBOL_NON_TERMINAL));
   smie_bnf_grammar_add_rule (grammar, rule);
 
   /* T -> F */
-  rule = g_list_append (NULL, smie_symbol_alloc ("T", SMIE_SYMBOL_NON_TERMINAL));
-  rule = g_list_append (rule, smie_symbol_alloc ("F", SMIE_SYMBOL_NON_TERMINAL));
+  rule = g_list_append (NULL, (gpointer) smie_symbol_intern (pool, "T", SMIE_SYMBOL_NON_TERMINAL));
+  rule = g_list_append (rule, (gpointer) smie_symbol_intern (pool, "F", SMIE_SYMBOL_NON_TERMINAL));
   smie_bnf_grammar_add_rule (grammar, rule);
 
   /* F -> n */
-  rule = g_list_append (NULL, smie_symbol_alloc ("F", SMIE_SYMBOL_NON_TERMINAL));
-  rule = g_list_append (rule, smie_symbol_alloc ("n", SMIE_SYMBOL_TERMINAL_VAR));
+  rule = g_list_append (NULL, (gpointer) smie_symbol_intern (pool, "F", SMIE_SYMBOL_NON_TERMINAL));
+  rule = g_list_append (rule, (gpointer) smie_symbol_intern (pool, "n", SMIE_SYMBOL_TERMINAL_VAR));
   smie_bnf_grammar_add_rule (grammar, rule);
 
   /* F -> "(" E ")" */
-  rule = g_list_append (NULL, smie_symbol_alloc ("F", SMIE_SYMBOL_NON_TERMINAL));
-  rule = g_list_append (rule, smie_symbol_alloc ("(", SMIE_SYMBOL_TERMINAL));
-  rule = g_list_append (rule, smie_symbol_alloc ("E", SMIE_SYMBOL_NON_TERMINAL));
-  rule = g_list_append (rule, smie_symbol_alloc (")", SMIE_SYMBOL_TERMINAL));
+  rule = g_list_append (NULL, (gpointer) smie_symbol_intern (pool, "F", SMIE_SYMBOL_NON_TERMINAL));
+  rule = g_list_append (rule, (gpointer) smie_symbol_intern (pool, "(", SMIE_SYMBOL_TERMINAL));
+  rule = g_list_append (rule, (gpointer) smie_symbol_intern (pool, "E", SMIE_SYMBOL_NON_TERMINAL));
+  rule = g_list_append (rule, (gpointer) smie_symbol_intern (pool, ")", SMIE_SYMBOL_TERMINAL));
   smie_bnf_grammar_add_rule (grammar, rule);
 
   return grammar;
@@ -101,20 +101,23 @@ test_previous_token (gchar **tokenp, goffset *offsetp, gpointer user_data)
 int
 main (void)
 {
-  // smie_bnf_grammar_t *bnf = populate_bnf_grammar ();
+  smie_symbol_pool_t *pool = smie_symbol_pool_alloc ();
+  smie_bnf_grammar_t *bnf = populate_bnf_grammar (pool);
   smie_prec2_grammar_t *prec2 = smie_prec2_grammar_alloc ();
   smie_precs_grammar_t *precs = smie_precs_grammar_alloc ();
   goffset offset;
 
   smie_bnf_grammar_t *bnf2;
-  bnf2 = smie_bnf_grammar_alloc_from_string ("\
+  bnf2 = smie_bnf_grammar_from_string (pool, "\
 s: \"#\" e \"#\";\n\
 e: e \"+\" t | t;\n\
 t: t \"x\" f | f;\n\
 f: N | \"(\" e \")\";");
   smie_bnf_to_prec2 (bnf2, prec2);
+  smie_bnf_grammar_free (bnf2);
   smie_debug_dump_prec2_grammar (prec2);
   smie_prec2_to_precs (prec2, precs);
+  smie_prec2_grammar_free (prec2);
   smie_debug_dump_precs_grammar (precs);
 
 #if 0
@@ -132,5 +135,6 @@ f: N | \"(\" e \")\";");
   g_printf ("%d\n", offset);
 
   smie_precs_grammar_free (precs);
+  smie_symbol_pool_free (pool);
   return 0;
 }

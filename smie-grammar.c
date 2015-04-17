@@ -23,6 +23,11 @@
 #include "smie-grammar.h"
 #include "smie-gram-gen.h"
 
+struct smie_symbol_pool_t
+{
+  GHashTable *allocated;
+};
+
 struct smie_symbol_t
 {
   gchar *name;
@@ -53,7 +58,6 @@ struct smie_prec2_t
 
 struct smie_prec2_grammar_t
 {
-  struct smie_bnf_grammar_t *bnf;
   GHashTable *prec2;
   GHashTable *openers;
   GHashTable *closers;
@@ -93,7 +97,6 @@ struct smie_prec_t
 
 struct smie_precs_grammar_t
 {
-  struct smie_prec2_grammar_t *prec2;
   GHashTable *precs;
 };
 
@@ -112,20 +115,50 @@ smie_symbol_equal (gconstpointer a, gconstpointer b)
   return as->type == bs->type && strcmp (as->name, bs->name) == 0;
 }
 
-struct smie_symbol_t *
-smie_symbol_alloc (const gchar *name, enum smie_symbol_type_t type)
+const struct smie_symbol_t *
+smie_symbol_intern (struct smie_symbol_pool_t *pool,
+		    const gchar *name,
+		    enum smie_symbol_type_t type)
 {
-  struct smie_symbol_t *result = g_new0 (struct smie_symbol_t, 1);
-  result->name = g_strdup (name);
-  result->type = type;
+  struct smie_symbol_t symbol, *result;
+  symbol.name = (gchar *) name;
+  symbol.type = type;
+  if (!g_hash_table_lookup_extended (pool->allocated,
+				     &symbol,
+				     (gpointer *) &result,
+				     NULL))
+    {
+      result = g_new0 (struct smie_symbol_t, 1);
+      result->name = g_strdup (name);
+      result->type = type;
+      g_hash_table_add (pool->allocated, result);
+    }
   return result;
 }
 
-void
+static void
 smie_symbol_free (struct smie_symbol_t *symbol)
 {
   g_free (symbol->name);
   g_free (symbol);
+}
+
+struct smie_symbol_pool_t *
+smie_symbol_pool_alloc (void)
+{
+  struct smie_symbol_pool_t *result = g_new0 (struct smie_symbol_pool_t, 1);
+  result->allocated = g_hash_table_new_full (smie_symbol_hash,
+					     smie_symbol_equal,
+					     (GDestroyNotify) smie_symbol_free,
+					     NULL);
+  return result;
+}
+
+void
+smie_symbol_pool_free (smie_symbol_pool_t *pool)
+{
+  g_hash_table_destroy (pool->allocated);
+  g_free (pool);
 }
 
 static struct smie_rule_t *
@@ -139,7 +172,7 @@ smie_rule_alloc (GList *symbols)
 static void
 smie_rule_free (struct smie_rule_t *rule)
 {
-  g_list_free_full (rule->symbols, (GDestroyNotify) smie_symbol_free);
+  g_list_free (rule->symbols);
   g_free (rule);
 }
 
@@ -258,8 +291,6 @@ smie_prec2_grammar_free (struct smie_prec2_grammar_t *grammar)
   g_hash_table_destroy (grammar->prec2);
   g_hash_table_destroy (grammar->openers);
   g_hash_table_destroy (grammar->closers);
-  if (grammar->bnf)
-    smie_bnf_grammar_free (grammar->bnf);
   g_free (grammar);
 }
 
@@ -288,8 +319,6 @@ void
 smie_precs_grammar_free (struct smie_precs_grammar_t *grammar)
 {
   g_hash_table_destroy (grammar->precs);
-  if (grammar->prec2)
-    smie_prec2_grammar_free (grammar->prec2);
   g_free (grammar);
 }
 
@@ -516,8 +545,6 @@ smie_bnf_to_prec2 (struct smie_bnf_grammar_t *bnf,
 
   g_hash_table_destroy (first_op);
   g_hash_table_destroy (last_op);
-
-  prec2->bnf = bnf;
   return TRUE;
 }
 
@@ -536,27 +563,6 @@ smie_debug_dump_prec2_grammar (struct smie_prec2_grammar_t *grammar)
 		: prec2->type == SMIE_PREC2_LT ? '<' : '>',
 		prec2->right->name);
     }
-}
-
-static struct smie_func_t *
-smie_func_alloc (const smie_symbol_t *symbol,
-		 enum smie_func_type_t type)
-{
-  struct smie_func_t *result = g_new0 (struct smie_func_t, 1);
-  result->u.symbol = symbol;
-  result->type = type;
-  return result;
-}
-
-static struct smie_func_t *
-smie_func_compose (const struct smie_func_t *f,
-		   const struct smie_func_t *g)
-{
-  struct smie_func_t *result = g_new0 (struct smie_func_t, 1);
-  result->u.composed.f = f;
-  result->u.composed.g = g;
-  result->type = SMIE_FUNC_COMPOSED;
-  return result;
 }
 
 static guint smie_func2_hash (gconstpointer key);
@@ -695,8 +701,8 @@ gboolean
 smie_prec2_to_precs (struct smie_prec2_grammar_t *prec2,
 		     struct smie_precs_grammar_t *precs)
 {
-  GHashTable *allocated = g_hash_table_new_full (g_direct_hash,
-						 g_direct_equal,
+  GHashTable *allocated = g_hash_table_new_full (smie_func_hash,
+						 smie_func_equal,
 						 g_free,
 						 NULL);
   GHashTable *unassigned = g_hash_table_new_full (smie_func2_hash,
@@ -713,11 +719,30 @@ smie_prec2_to_precs (struct smie_prec2_grammar_t *prec2,
     {
       struct smie_prec2_t *p2 = key;
       struct smie_symbol_t *ab;
-      struct smie_func_t *f, *g, *fg;
-      f = smie_func_alloc (p2->left, SMIE_FUNC_F);
-      g_hash_table_add (allocated, f);
-      g = smie_func_alloc (p2->right, SMIE_FUNC_G);
-      g_hash_table_add (allocated, g);
+      struct smie_func_t func, *f, *g, *fg;
+
+      func.u.symbol = p2->left;
+      func.type = SMIE_FUNC_F;
+      if (!g_hash_table_lookup_extended (allocated,
+					 &func,
+					 (gpointer *) &f,
+					 NULL))
+	{
+	  f = g_memdup (&func, sizeof (struct smie_func_t));
+	  g_hash_table_add (allocated, f);
+	}
+
+      func.u.symbol = p2->right;
+      func.type = SMIE_FUNC_G;
+      if (!g_hash_table_lookup_extended (allocated,
+					 &func,
+					 (gpointer *) &g,
+					 NULL))
+	{
+	  g = g_memdup (&func, sizeof (struct smie_func_t));
+	  g_hash_table_add (allocated, g);
+	}
+
       switch (p2->type)
 	{
 	case SMIE_PREC2_LT:
@@ -727,8 +752,17 @@ smie_prec2_to_precs (struct smie_prec2_grammar_t *prec2,
 	  g_hash_table_add (unassigned, smie_func2_alloc (g, f));
 	  break;
 	case SMIE_PREC2_EQ:
-	  fg = smie_func_compose (f, g);
-	  g_hash_table_add (allocated, fg);
+	  func.u.composed.f = f;
+	  func.u.composed.g = g;
+	  func.type = SMIE_FUNC_COMPOSED;
+	  if (!g_hash_table_lookup_extended (allocated,
+					     &func,
+					     (gpointer *) &fg,
+					     NULL))
+	    {
+	      fg = g_memdup (&func, sizeof (struct smie_func_t));
+	      g_hash_table_add (allocated, fg);
+	    }
 	  g_hash_table_insert (composed, f, fg);
 	  g_hash_table_insert (composed, g, fg);
 	  break;
@@ -853,8 +887,6 @@ smie_prec2_to_precs (struct smie_prec2_grammar_t *prec2,
 	}
     }
   g_hash_table_destroy (assigned);
-
-  precs->prec2 = prec2;
   g_hash_table_destroy (allocated);
   return TRUE;
 }
@@ -980,10 +1012,15 @@ smie_backward_sexp (struct smie_precs_grammar_t *grammar,
 }
 
 struct smie_bnf_grammar_t *
-smie_bnf_grammar_alloc_from_string (const gchar *input)
+smie_bnf_grammar_from_string (struct smie_symbol_pool_t *pool,
+			      const gchar *input)
 {
   struct smie_bnf_grammar_t *grammar = smie_bnf_grammar_alloc ();
   const gchar *cp = input;
-  yyparse (grammar, &input);
+  if (yyparse (pool, grammar, &cp) != 0)
+    {
+      smie_bnf_grammar_free (grammar);
+      return NULL;
+    }
   return grammar;
 }

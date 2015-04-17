@@ -22,6 +22,7 @@
 
 G_BEGIN_DECLS
 
+typedef struct smie_symbol_pool_t smie_symbol_pool_t;
 typedef struct smie_symbol_t smie_symbol_t;
 typedef struct smie_bnf_grammar_t smie_bnf_grammar_t;
 typedef struct smie_prec2_grammar_t smie_prec2_grammar_t;
@@ -43,11 +44,16 @@ enum smie_prec2_type_t
     SMIE_PREC2_GT
   };
 
-smie_symbol_t *smie_symbol_alloc (const gchar *name, smie_symbol_type_t type);
-void smie_symbol_free (smie_symbol_t *symbol);
+smie_symbol_pool_t *smie_symbol_pool_alloc (void);
+void smie_symbol_pool_free (smie_symbol_pool_t *pool);
+
+const smie_symbol_t *smie_symbol_intern (smie_symbol_pool_t *pool,
+					 const gchar *name,
+					 smie_symbol_type_t type);
 
 smie_bnf_grammar_t *smie_bnf_grammar_alloc (void);
-smie_bnf_grammar_t *smie_bnf_grammar_alloc_from_string (const gchar *input);
+smie_bnf_grammar_t *smie_bnf_grammar_from_string (smie_symbol_pool_t *pool,
+						  const gchar *input);
 void smie_bnf_grammar_free (smie_bnf_grammar_t *grammar);
 gboolean smie_bnf_grammar_add_rule (smie_bnf_grammar_t *grammar,
 				    GList *symbols);

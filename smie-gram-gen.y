@@ -23,16 +23,20 @@
 
 #include "smie-grammar.h"
 #include "smie-gram-gen.h"
-static int yylex (YYSTYPE *lval, smie_bnf_grammar_t *grammar,
+static int yylex (YYSTYPE *lval,
+		  smie_symbol_pool_t *pool,
+		  smie_bnf_grammar_t *grammar,
 		  const gchar **input);
-static void yyerror (smie_bnf_grammar_t *grammar, const gchar **input,
+static void yyerror (smie_symbol_pool_t *pool,
+		     smie_bnf_grammar_t *grammar,
+		     const gchar **input,
 		     const char *string);
 %}
-%param {smie_bnf_grammar_t *grammar} {const gchar **input}
+%param {smie_symbol_pool_t *pool} {smie_bnf_grammar_t *grammar} {const gchar **input}
 %define api.pure full
 
 %union {
-  smie_symbol_t *sval;
+  const smie_symbol_t *sval;
   GList *lval;
   gchar *tval;
 }
@@ -51,15 +55,18 @@ rules:	%empty
 
 rule:	NONTERMINAL ':' sentences ';'
 	{
+	  gchar *nonterminal = $1;
 	  GList *sentences = $3, *l = sentences;
 	  for (; l; l = l->next)
 	    {
 	      GList *l2 = l->data;
-	      smie_symbol_t *symbol
-		= smie_symbol_alloc ($1, SMIE_SYMBOL_NON_TERMINAL);
-	      smie_bnf_grammar_add_rule (grammar, g_list_prepend (l2, symbol));
+	      const smie_symbol_t *symbol
+		= smie_symbol_intern (pool, nonterminal,
+				      SMIE_SYMBOL_NON_TERMINAL);
+	      GList *rule = g_list_prepend (l2, (gpointer) symbol);
+	      smie_bnf_grammar_add_rule (grammar, rule);
 	    }
-	  g_free ($1);
+	  g_free (nonterminal);
 	  g_list_free (sentences);
 	}
 	;
@@ -76,27 +83,27 @@ sentences:	symbols
 
 symbols:	symbol
 	{
-	  $$ = g_list_append (NULL, $1);
+	  $$ = g_list_append (NULL, (gpointer) $1);
 	}
 	| symbols symbol
 	{
-	  $$ = g_list_append ($1, $2);
+	  $$ = g_list_append ($1, (gpointer) $2);
 	}
 	;
 
 symbol:	NONTERMINAL
 	{
-	  $$ = smie_symbol_alloc ($1, SMIE_SYMBOL_NON_TERMINAL);
+	  $$ = smie_symbol_intern (pool, $1, SMIE_SYMBOL_NON_TERMINAL);
 	  g_free ($1);
 	}
 	| TERMINAL
 	{
-	  $$ = smie_symbol_alloc ($1, SMIE_SYMBOL_TERMINAL);
+	  $$ = smie_symbol_intern (pool, $1, SMIE_SYMBOL_TERMINAL);
 	  g_free ($1);
 	}
 	| TERMINALVAR
 	{
-	  $$ = smie_symbol_alloc ($1, SMIE_SYMBOL_TERMINAL_VAR);
+	  $$ = smie_symbol_intern (pool, $1, SMIE_SYMBOL_TERMINAL_VAR);
 	  g_free ($1);
 	}
 	;
@@ -104,7 +111,8 @@ symbol:	NONTERMINAL
 %%
 
 static int
-yylex (YYSTYPE *lval, smie_bnf_grammar_t *grammar, const gchar **input)
+yylex (YYSTYPE *lval, smie_symbol_pool_t *pool, smie_bnf_grammar_t *grammar,
+       const gchar **input)
 {
   const char *cp = *input;
 
@@ -172,6 +180,7 @@ yylex (YYSTYPE *lval, smie_bnf_grammar_t *grammar, const gchar **input)
 }
 
 static void
-yyerror (smie_bnf_grammar_t *grammar, const gchar **input, const char *string)
+yyerror (smie_symbol_pool_t *pool, smie_bnf_grammar_t *grammar,
+	 const gchar **input, const char *string)
 {
 }
