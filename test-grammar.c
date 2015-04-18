@@ -115,7 +115,7 @@ advance_func (smie_advance_step_t step, gint count, gpointer user_data)
   gboolean result;
   switch (step)
     {
-    case SMIE_ADVANCE_TOKEN:
+    case SMIE_ADVANCE_TOKENS:
       if (count > 0)
 	for (; count > 0; count--)
 	  offset = forward_token (offset, data->input);

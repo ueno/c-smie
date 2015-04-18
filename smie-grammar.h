@@ -76,10 +76,10 @@ gboolean smie_prec2_to_precs (smie_prec2_grammar_t *prec2,
 typedef enum smie_advance_step_t smie_advance_step_t;
 enum smie_advance_step_t
   {
-    SMIE_ADVANCE_CHAR,
-    SMIE_ADVANCE_LINE,
+    SMIE_ADVANCE_CHARACTERS,
+    SMIE_ADVANCE_LINES,
     SMIE_ADVANCE_LINE_ENDS,
-    SMIE_ADVANCE_TOKEN
+    SMIE_ADVANCE_TOKENS
   };
 
 typedef gboolean (*smie_advance_function_t) (smie_advance_step_t, gint,
