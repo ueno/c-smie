@@ -157,11 +157,16 @@ main (void)
   struct data data;
 
   smie_bnf_grammar_t *bnf2;
+  GError *error;
+
+  error = NULL;
   bnf2 = smie_bnf_grammar_from_string (pool, "\
 s: \"#\" e \"#\";\n\
 e: e \"+\" t | t;\n\
 t: t \"x\" f | f;\n\
-f: N | \"(\" e \")\";");
+f: N | \"(\" e \")\";",
+				       &error);
+  g_assert_no_error (error);
   smie_bnf_to_prec2 (bnf2, prec2);
   smie_bnf_grammar_free (bnf2);
   smie_debug_dump_prec2_grammar (prec2);

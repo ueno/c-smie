@@ -1018,13 +1018,20 @@ smie_backward_sexp (struct smie_precs_grammar_t *grammar,
 			    smie_select_right);
 }
 
+GQuark
+smie_error_quark (void)
+{
+  return g_quark_from_static_string ("smie-error-quark");
+}
+
 struct smie_bnf_grammar_t *
 smie_bnf_grammar_from_string (struct smie_symbol_pool_t *pool,
-			      const gchar *input)
+			      const gchar *input,
+			      GError **error)
 {
   struct smie_bnf_grammar_t *grammar = smie_bnf_grammar_alloc ();
   const gchar *cp = input;
-  if (yyparse (pool, grammar, &cp) != 0)
+  if (yyparse (pool, grammar, &cp, error) != 0)
     {
       smie_bnf_grammar_free (grammar);
       return NULL;

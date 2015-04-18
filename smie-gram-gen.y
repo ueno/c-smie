@@ -26,13 +26,15 @@
 static int yylex (YYSTYPE *lval,
 		  smie_symbol_pool_t *pool,
 		  smie_bnf_grammar_t *grammar,
-		  const gchar **input);
+		  const gchar **input,
+		  GError **error);
 static void yyerror (smie_symbol_pool_t *pool,
 		     smie_bnf_grammar_t *grammar,
 		     const gchar **input,
+		     GError **error,
 		     const char *string);
 %}
-%param {smie_symbol_pool_t *pool} {smie_bnf_grammar_t *grammar} {const gchar **input}
+%param {smie_symbol_pool_t *pool} {smie_bnf_grammar_t *grammar} {const gchar **input} {GError **error}
 %define api.pure full
 
 %union {
@@ -112,7 +114,7 @@ symbol:	NONTERMINAL
 
 static int
 yylex (YYSTYPE *lval, smie_symbol_pool_t *pool, smie_bnf_grammar_t *grammar,
-       const gchar **input)
+       const gchar **input, GError **error)
 {
   const char *cp = *input;
 
@@ -181,6 +183,7 @@ yylex (YYSTYPE *lval, smie_symbol_pool_t *pool, smie_bnf_grammar_t *grammar,
 
 static void
 yyerror (smie_symbol_pool_t *pool, smie_bnf_grammar_t *grammar,
-	 const gchar **input, const char *string)
+	 const gchar **input, GError **error, const char *string)
 {
+  g_set_error_literal (error, SMIE_ERROR, SMIE_ERROR_GRAMMAR, string);
 }

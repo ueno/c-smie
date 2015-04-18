@@ -51,9 +51,18 @@ const smie_symbol_t *smie_symbol_intern (smie_symbol_pool_t *pool,
 					 const gchar *name,
 					 smie_symbol_type_t type);
 
+#define SMIE_ERROR smie_error_quark ()
+GQuark smie_error_quark (void);
+
+enum smie_error_code_t
+  {
+    SMIE_ERROR_GRAMMAR
+  };
+
 smie_bnf_grammar_t *smie_bnf_grammar_alloc (void);
 smie_bnf_grammar_t *smie_bnf_grammar_from_string (smie_symbol_pool_t *pool,
-						  const gchar *input);
+						  const gchar *input,
+						  GError **error);
 void smie_bnf_grammar_free (smie_bnf_grammar_t *grammar);
 gboolean smie_bnf_grammar_add_rule (smie_bnf_grammar_t *grammar,
 				    GList *symbols);
