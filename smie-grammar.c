@@ -706,7 +706,8 @@ smie_func2_equal (gconstpointer a, gconstpointer b)
 
 gboolean
 smie_prec2_to_precs (struct smie_prec2_grammar_t *prec2,
-		     struct smie_precs_grammar_t *precs)
+		     struct smie_precs_grammar_t *precs,
+		     GError **error)
 {
   GHashTable *allocated = g_hash_table_new_full (smie_func_hash,
 						 smie_func_equal,
@@ -721,6 +722,7 @@ smie_prec2_to_precs (struct smie_prec2_grammar_t *prec2,
   gint iteration_count;
   GHashTableIter iter;
   gpointer key, value;
+  gboolean result = TRUE;
   g_hash_table_iter_init (&iter, prec2->prec2);
   while (g_hash_table_iter_next (&iter, &key, NULL))
     {
@@ -818,6 +820,16 @@ smie_prec2_to_precs (struct smie_prec2_grammar_t *prec2,
 	    to_remove = g_list_append (to_remove, (gpointer) funcs->f);
 	}
 
+      if (!to_remove)
+	{
+	  g_set_error (error, SMIE_ERROR, SMIE_ERROR_GRAMMAR,
+		       "cycle found in prec2 grammar");
+	  g_hash_table_destroy (composed);
+	  g_hash_table_destroy (unassigned);
+	  result = FALSE;
+	  goto out;
+	}
+
       for (l = to_remove; l; l = l->next)
 	{
 	  struct smie_func_t *func = l->data;
@@ -894,9 +906,10 @@ smie_prec2_to_precs (struct smie_prec2_grammar_t *prec2,
 	  g_assert_not_reached ();
 	}
     }
+ out:
   g_hash_table_destroy (assigned);
   g_hash_table_destroy (allocated);
-  return TRUE;
+  return result;
 }
 
 typedef gboolean (*smie_select_function_t) (struct smie_prec_t *, gint *);

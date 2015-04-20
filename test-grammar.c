@@ -170,7 +170,9 @@ f: N | \"(\" e \")\";",
   smie_bnf_to_prec2 (bnf2, prec2);
   smie_bnf_grammar_free (bnf2);
   smie_debug_dump_prec2_grammar (prec2);
-  smie_prec2_to_precs (prec2, precs);
+  error = NULL;
+  smie_prec2_to_precs (prec2, precs, &error);
+  g_assert_no_error (error);
   smie_prec2_grammar_free (prec2);
   smie_debug_dump_precs_grammar (precs);
 

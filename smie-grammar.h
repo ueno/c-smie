@@ -80,7 +80,8 @@ void smie_precs_grammar_free (smie_precs_grammar_t *grammar);
 gboolean smie_bnf_to_prec2 (smie_bnf_grammar_t *bnf,
 			    smie_prec2_grammar_t *prec2);
 gboolean smie_prec2_to_precs (smie_prec2_grammar_t *prec2,
-			      smie_precs_grammar_t *precs);
+			      smie_precs_grammar_t *precs,
+			      GError **error);
 
 typedef enum smie_advance_step_t smie_advance_step_t;
 enum smie_advance_step_t
