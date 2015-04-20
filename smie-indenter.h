@@ -24,9 +24,11 @@ G_BEGIN_DECLS
 
 typedef struct smie_indenter_t smie_indenter_t;
 
-smie_indenter_t *smie_indenter_new (smie_precs_grammar_t *grammar,
+smie_indenter_t *smie_indenter_new (smie_symbol_pool_t *pool,
+				    smie_precs_grammar_t *grammar,
 				    smie_advance_function_t advance_func,
-				    smie_read_function_t read_func);
+				    smie_read_function_t read_func,
+				    smie_read_char_function_t read_char_func);
 smie_indenter_t *smie_indenter_ref (smie_indenter_t *indenter);
 void smie_indenter_unref (smie_indenter_t *indenter);
 gint smie_indenter_calculate (smie_indenter_t *indenter,

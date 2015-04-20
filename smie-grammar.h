@@ -73,9 +73,9 @@ gboolean smie_prec2_grammar_add_rule (smie_prec2_grammar_t *grammar,
 				      const smie_symbol_t *a,
 				      const smie_symbol_t *b,
 				      smie_prec2_type_t type);
-gboolean smie_prec2_grammar_add_opener (struct smie_prec2_grammar_t *grammar,
+gboolean smie_prec2_grammar_add_opener (smie_prec2_grammar_t *grammar,
 					const smie_symbol_t *symbol);
-gboolean smie_prec2_grammar_add_closer (struct smie_prec2_grammar_t *grammar,
+gboolean smie_prec2_grammar_add_closer (smie_prec2_grammar_t *grammar,
 					const smie_symbol_t *symbol);
 
 smie_precs_grammar_t *smie_precs_grammar_alloc (void);
@@ -86,6 +86,10 @@ gboolean smie_precs_grammar_add_rule (smie_precs_grammar_t *grammar,
 				      gboolean left_is_parenthesis,
 				      gint right_prec,
 				      gboolean right_is_parenthesis);
+gboolean smie_precs_grammar_is_opener (smie_precs_grammar_t *grammar,
+				       const smie_symbol_t *symbol);
+gboolean smie_precs_grammar_is_closer (smie_precs_grammar_t *grammar,
+				       const smie_symbol_t *symbol);
 
 gboolean smie_bnf_to_prec2 (smie_bnf_grammar_t *bnf,
 			    smie_prec2_grammar_t *prec2,
@@ -106,6 +110,7 @@ enum smie_advance_step_t
 typedef gboolean (*smie_advance_function_t) (smie_advance_step_t, gint,
 					     gpointer);
 typedef gboolean (*smie_read_function_t) (gchar **, gpointer);
+typedef gunichar (*smie_read_char_function_t) (gpointer);
 
 gboolean smie_forward_sexp (smie_precs_grammar_t *grammar,
 			    smie_advance_function_t advance_func,

@@ -1010,3 +1010,21 @@ smie_bnf_grammar_from_string (struct smie_symbol_pool_t *pool,
     }
   return grammar;
 }
+
+gboolean
+smie_precs_grammar_is_opener (struct smie_precs_grammar_t *grammar,
+			      const struct smie_symbol_t *symbol)
+{
+  struct smie_prec_t *prec
+    = g_hash_table_lookup (grammar->precs, (gpointer) symbol);
+  return prec && prec->left_is_parenthesis;
+}
+
+gboolean
+smie_precs_grammar_is_closer (struct smie_precs_grammar_t *grammar,
+			      const struct smie_symbol_t *symbol)
+{
+  struct smie_prec_t *prec
+    = g_hash_table_lookup (grammar->precs, (gpointer) symbol);
+  return prec && prec->right_is_parenthesis;
+}

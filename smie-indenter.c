@@ -26,20 +26,26 @@ struct smie_indenter_t
 {
   volatile gint ref_count;
 
+  smie_symbol_pool_t *pool;
   smie_precs_grammar_t *grammar;
   smie_advance_function_t advance_func;
   smie_read_function_t read_func;
+  smie_read_char_function_t read_char_func;
 };
 
 struct smie_indenter_t *
-smie_indenter_new (smie_precs_grammar_t *grammar,
+smie_indenter_new (smie_symbol_pool_t *pool,
+		   smie_precs_grammar_t *grammar,
 		   smie_advance_function_t advance_func,
-		   smie_read_function_t read_func)
+		   smie_read_function_t read_func,
+		   smie_read_char_function_t read_char_func)
 {
   struct smie_indenter_t *result = g_new0 (struct smie_indenter_t, 1);
+  result->pool = pool;
   result->grammar = grammar;
   result->advance_func = advance_func;
   result->read_func = read_func;
+  result->read_char_func = read_char_func;
   return result;
 }
 
@@ -72,5 +78,36 @@ gint
 smie_indenter_calculate (struct smie_indenter_t *indenter,
 			 gpointer callback)
 {
-  return 0;
+  gchar *token;
+  const smie_symbol_t *symbol;
+  gint column = 0;
+
+  indenter->advance_func (SMIE_ADVANCE_LINE_ENDS, 1, callback);
+  indenter->advance_func (SMIE_ADVANCE_TOKENS, -1, callback);
+
+  if (indenter->read_func (&token, callback)
+      && (symbol = smie_symbol_intern (indenter->pool,
+				       token,
+				       SMIE_SYMBOL_TERMINAL),
+	  smie_precs_grammar_is_closer (indenter->grammar, symbol)))
+    smie_backward_sexp (indenter->grammar,
+			indenter->advance_func,
+			indenter->read_func,
+			callback);
+  else
+    {
+      indenter->advance_func (SMIE_ADVANCE_LINES, -1, callback);
+      indenter->advance_func (SMIE_ADVANCE_LINE_ENDS, -1, callback);
+    }
+
+  indenter->advance_func (SMIE_ADVANCE_LINE_ENDS, -1, callback);
+  while (indenter->advance_func (SMIE_ADVANCE_CHARACTERS, 1, callback))
+    {
+      gunichar uc = indenter->read_char_func (callback);
+      if (!(0x20 <= uc && uc <= 0x7F && g_ascii_isspace (uc)))
+	break;
+      column++;
+    }
+
+  return column;
 }
