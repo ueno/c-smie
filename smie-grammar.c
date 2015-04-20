@@ -24,83 +24,7 @@
 #include <string.h>
 #include "smie-grammar.h"
 #include "smie-gram-gen.h"
-
-struct smie_symbol_pool_t
-{
-  GHashTable *allocated;
-};
-
-struct smie_symbol_t
-{
-  gchar *name;
-  enum smie_symbol_type_t type;
-};
-
-struct smie_rule_t
-{
-  GList *symbols;
-};
-
-struct smie_rule_list_t
-{
-  GList *rules;
-};
-
-struct smie_bnf_grammar_t
-{
-  GHashTable *rules;
-};
-
-struct smie_prec2_t
-{
-  const struct smie_symbol_t *left;
-  const struct smie_symbol_t *right;
-  enum smie_prec2_type_t type;
-};
-
-struct smie_prec2_grammar_t
-{
-  GHashTable *prec2;
-  GHashTable *openers;
-  GHashTable *closers;
-};
-
-enum smie_func_type_t
-  {
-    SMIE_FUNC_F,
-    SMIE_FUNC_G,
-    SMIE_FUNC_COMPOSED
-  };
-
-struct smie_func2_t
-{
-  const struct smie_func_t *f;
-  const struct smie_func_t *g;
-};
-
-struct smie_func_t
-{
-  union
-  {
-    const struct smie_symbol_t *symbol;
-    struct smie_func2_t composed;
-  } u;
-  enum smie_func_type_t type;
-};
-
-struct smie_prec_t
-{
-  gint left_prec;
-  gboolean left_is_parenthesis;
-
-  gint right_prec;
-  gboolean right_is_parenthesis;
-};
-
-struct smie_precs_grammar_t
-{
-  GHashTable *precs;
-};
+#include "smie-private.h"
 
 static guint
 smie_symbol_hash (gconstpointer key)
@@ -207,81 +131,6 @@ smie_bnf_grammar_free (struct smie_bnf_grammar_t *bnf)
 {
   g_hash_table_destroy (bnf->rules);
   g_free (bnf);
-}
-
-static gboolean
-smie_rule_equal (struct smie_rule_t *a,
-		 struct smie_rule_t *b)
-{
-  GList *al, *bl;
-  for (al = a->symbols, bl = b->symbols; al && bl; al = al->next, bl = bl->next)
-    if (al->data != bl->data)
-      return FALSE;
-  return al == NULL && bl == NULL;
-}
-
-static gboolean
-smie_rule_list_equal (struct smie_rule_list_t *a,
-			    struct smie_rule_list_t *b)
-{
-  struct { GList *from, *to; } permutations[2];
-  gint i;
-
-  permutations[0].from = a->rules;
-  permutations[0].to = b->rules;
-  permutations[1].from = b->rules;
-  permutations[1].to = a->rules;
-
-  for (i = 0; i < G_N_ELEMENTS (permutations); i++)
-    {
-      GList *l;
-      for (l = permutations[i].from; l; l = l->next)
-	{
-	  GList *l2;
-	  gboolean found = FALSE;
-	  for (l2 = permutations[i].to; l2; l2 = l2->next)
-	    {
-	      if (smie_rule_equal (l->data, l2->data))
-		{
-		  found = TRUE;
-		  break;
-		}
-	    }
-	  if (!found)
-	    return FALSE;
-	}
-    }
-  return TRUE;
-}
-
-gboolean
-smie_debug_bnf_grammar_equal (struct smie_bnf_grammar_t *a,
-			      struct smie_bnf_grammar_t *b)
-{
-  struct { GHashTable *from, *to; } permutations[2];
-  gint i;
-
-  permutations[0].from = a->rules;
-  permutations[0].to = b->rules;
-  permutations[1].from = b->rules;
-  permutations[1].to = a->rules;
-
-  for (i = 0; i < G_N_ELEMENTS (permutations); i++)
-    {
-      GHashTableIter iter;
-      gpointer key, value;
-      g_hash_table_iter_init (&iter, permutations[i].from);
-      while (g_hash_table_iter_next (&iter, &key, &value))
-	{
-	  gpointer key1, value1;
-	  if (!g_hash_table_lookup_extended (permutations[i].to, key, &key1,
-					     &value1)
-	      || key != key1
-	      || !smie_rule_list_equal (value, value1))
-	    return FALSE;
-	}
-    }
-  return TRUE;
 }
 
 gboolean
@@ -394,53 +243,6 @@ smie_prec2_grammar_add_closer (struct smie_prec2_grammar_t *grammar,
 			       const struct smie_symbol_t *symbol)
 {
   return g_hash_table_add (grammar->closers, (gpointer) symbol);
-}
-
-gboolean
-smie_debug_prec2_grammar_equal (struct smie_prec2_grammar_t *a,
-				struct smie_prec2_grammar_t *b)
-{
-  struct { struct smie_prec2_grammar_t *from, *to; } permutations[2];
-  gint i;
-
-  permutations[0].from = a;
-  permutations[0].to = b;
-  permutations[1].from = b;
-  permutations[1].to = a;
-
-  for (i = 0; i < G_N_ELEMENTS (permutations); i++)
-    {
-      GHashTableIter iter;
-      gpointer key, value;
-      g_hash_table_iter_init (&iter, permutations[i].from->prec2);
-      while (g_hash_table_iter_next (&iter, &key, &value))
-	{
-	  gpointer key1, value1;
-	  if (!g_hash_table_lookup_extended (permutations[i].to->prec2, key,
-					     &key1, &value1)
-	      || !smie_prec2_equal (key, key1))
-	    return FALSE;
-	}
-      g_hash_table_iter_init (&iter, permutations[i].from->openers);
-      while (g_hash_table_iter_next (&iter, &key, &value))
-	{
-	  gpointer key1, value1;
-	  if (!g_hash_table_lookup_extended (permutations[i].to->openers, key,
-					     &key1, &value1)
-	      || key != key1)
-	    return FALSE;
-	}
-      g_hash_table_iter_init (&iter, permutations[i].from->closers);
-      while (g_hash_table_iter_next (&iter, &key, &value))
-	{
-	  gpointer key1, value1;
-	  if (!g_hash_table_lookup_extended (permutations[i].to->closers, key,
-					     &key1, &value1)
-	      || key != key1)
-	    return FALSE;
-	}
-    }
-  return TRUE;
 }
 
 struct smie_precs_grammar_t *
@@ -689,6 +491,7 @@ smie_bnf_to_prec2 (struct smie_bnf_grammar_t *bnf,
   return TRUE;
 }
 
+#ifdef DEBUG
 void
 smie_debug_dump_prec2_grammar (struct smie_prec2_grammar_t *grammar)
 {
@@ -705,6 +508,7 @@ smie_debug_dump_prec2_grammar (struct smie_prec2_grammar_t *grammar)
 		prec2->right->name);
     }
 }
+#endif
 
 static guint smie_func2_hash (gconstpointer key);
 
@@ -780,7 +584,6 @@ smie_debug_dump_assigned (GHashTable *assigned)
       g_free (f_name);
     }
 }
-#endif
 
 void
 smie_debug_dump_precs_grammar (struct smie_precs_grammar_t *grammar)
@@ -797,6 +600,7 @@ smie_debug_dump_precs_grammar (struct smie_precs_grammar_t *grammar)
       g_printf ("g(%s) = %d\n", symbol->name, prec->right_prec);
     }
 }
+#endif
 
 static gboolean
 smie_func_equal (gconstpointer a, gconstpointer b)
@@ -1047,36 +851,6 @@ smie_prec2_to_precs (struct smie_prec2_grammar_t *prec2,
   g_hash_table_destroy (assigned);
   g_hash_table_destroy (allocated);
   return result;
-}
-
-gboolean
-smie_debug_precs_grammar_equal (struct smie_precs_grammar_t *a,
-				struct smie_precs_grammar_t *b)
-{
-  struct { struct smie_precs_grammar_t *from, *to; } permutations[2];
-  gint i;
-
-  permutations[0].from = a;
-  permutations[0].to = b;
-  permutations[1].from = b;
-  permutations[1].to = a;
-
-  for (i = 0; i < G_N_ELEMENTS (permutations); i++)
-    {
-      GHashTableIter iter;
-      gpointer key, value;
-      g_hash_table_iter_init (&iter, permutations[i].from->precs);
-      while (g_hash_table_iter_next (&iter, &key, &value))
-	{
-	  gpointer key1, value1;
-	  if (!g_hash_table_lookup_extended (permutations[i].to->precs, key,
-					     &key1, &value1)
-	      || key != key1
-	      || memcmp (value, value1, sizeof (struct smie_prec_t)) != 0)
-	    return FALSE;
-	}
-    }
-  return TRUE;
 }
 
 gboolean

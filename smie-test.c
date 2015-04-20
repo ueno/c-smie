@@ -1,0 +1,238 @@
+/*
+ * Copyright (C) 2015 Daiki Ueno
+ *
+ * This program is free software: you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see
+ * <http://www.gnu.org/licenses/>.
+ */
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
+#include "smie-test.h"
+
+#include <string.h>
+
+static gboolean
+smie_rule_equal (struct smie_rule_t *a,
+		 struct smie_rule_t *b)
+{
+  GList *al, *bl;
+  for (al = a->symbols, bl = b->symbols; al && bl; al = al->next, bl = bl->next)
+    if (al->data != bl->data)
+      return FALSE;
+  return al == NULL && bl == NULL;
+}
+
+static gboolean
+smie_rule_list_equal (struct smie_rule_list_t *a,
+			    struct smie_rule_list_t *b)
+{
+  struct { GList *from, *to; } permutations[2];
+  gint i;
+
+  permutations[0].from = a->rules;
+  permutations[0].to = b->rules;
+  permutations[1].from = b->rules;
+  permutations[1].to = a->rules;
+
+  for (i = 0; i < G_N_ELEMENTS (permutations); i++)
+    {
+      GList *l;
+      for (l = permutations[i].from; l; l = l->next)
+	{
+	  GList *l2;
+	  gboolean found = FALSE;
+	  for (l2 = permutations[i].to; l2; l2 = l2->next)
+	    {
+	      if (smie_rule_equal (l->data, l2->data))
+		{
+		  found = TRUE;
+		  break;
+		}
+	    }
+	  if (!found)
+	    return FALSE;
+	}
+    }
+  return TRUE;
+}
+
+gboolean
+smie_test_bnf_grammar_equal (struct smie_bnf_grammar_t *a,
+			 struct smie_bnf_grammar_t *b)
+{
+  struct { GHashTable *from, *to; } permutations[2];
+  gint i;
+
+  permutations[0].from = a->rules;
+  permutations[0].to = b->rules;
+  permutations[1].from = b->rules;
+  permutations[1].to = a->rules;
+
+  for (i = 0; i < G_N_ELEMENTS (permutations); i++)
+    {
+      GHashTableIter iter;
+      gpointer key, value;
+      g_hash_table_iter_init (&iter, permutations[i].from);
+      while (g_hash_table_iter_next (&iter, &key, &value))
+	{
+	  gpointer key1, value1;
+	  if (!g_hash_table_lookup_extended (permutations[i].to, key, &key1,
+					     &value1)
+	      || key != key1
+	      || !smie_rule_list_equal (value, value1))
+	    return FALSE;
+	}
+    }
+  return TRUE;
+}
+
+gboolean
+smie_test_prec2_grammar_equal (struct smie_prec2_grammar_t *a,
+			   struct smie_prec2_grammar_t *b)
+{
+  struct { struct smie_prec2_grammar_t *from, *to; } permutations[2];
+  gint i;
+
+  permutations[0].from = a;
+  permutations[0].to = b;
+  permutations[1].from = b;
+  permutations[1].to = a;
+
+  for (i = 0; i < G_N_ELEMENTS (permutations); i++)
+    {
+      GHashTableIter iter;
+      gpointer key, value;
+      g_hash_table_iter_init (&iter, permutations[i].from->prec2);
+      while (g_hash_table_iter_next (&iter, &key, &value))
+	{
+	  gpointer key1, value1;
+	  if (!g_hash_table_lookup_extended (permutations[i].to->prec2, key,
+					     &key1, &value1))
+	    return FALSE;
+	}
+      g_hash_table_iter_init (&iter, permutations[i].from->openers);
+      while (g_hash_table_iter_next (&iter, &key, &value))
+	{
+	  gpointer key1, value1;
+	  if (!g_hash_table_lookup_extended (permutations[i].to->openers, key,
+					     &key1, &value1)
+	      || key != key1)
+	    return FALSE;
+	}
+      g_hash_table_iter_init (&iter, permutations[i].from->closers);
+      while (g_hash_table_iter_next (&iter, &key, &value))
+	{
+	  gpointer key1, value1;
+	  if (!g_hash_table_lookup_extended (permutations[i].to->closers, key,
+					     &key1, &value1)
+	      || key != key1)
+	    return FALSE;
+	}
+    }
+  return TRUE;
+}
+
+gboolean
+smie_test_precs_grammar_equal (struct smie_precs_grammar_t *a,
+			   struct smie_precs_grammar_t *b)
+{
+  struct { struct smie_precs_grammar_t *from, *to; } permutations[2];
+  gint i;
+
+  permutations[0].from = a;
+  permutations[0].to = b;
+  permutations[1].from = b;
+  permutations[1].to = a;
+
+  for (i = 0; i < G_N_ELEMENTS (permutations); i++)
+    {
+      GHashTableIter iter;
+      gpointer key, value;
+      g_hash_table_iter_init (&iter, permutations[i].from->precs);
+      while (g_hash_table_iter_next (&iter, &key, &value))
+	{
+	  gpointer key1, value1;
+	  if (!g_hash_table_lookup_extended (permutations[i].to->precs, key,
+					     &key1, &value1)
+	      || key != key1
+	      || memcmp (value, value1, sizeof (struct smie_prec_t)) != 0)
+	    return FALSE;
+	}
+    }
+  return TRUE;
+}
+
+static goffset
+smie_test_forward_token (goffset offset, const gchar *input)
+{
+  while (input[offset] != '\0' && !g_ascii_isspace (input[offset]))
+    offset++;
+  while (input[offset] != '\0' && g_ascii_isspace (input[offset]))
+    offset++;
+  return offset;
+}
+
+static goffset
+smie_test_backward_token (goffset offset, const gchar *input)
+{
+  while (offset >= 0 && !g_ascii_isspace (input[offset]))
+    offset--;
+  while (offset >= 0 && g_ascii_isspace (input[offset]))
+    offset--;
+  return offset;
+}
+
+gboolean
+smie_test_advance_func (smie_advance_step_t step, gint count,
+			gpointer user_data)
+{
+  struct smie_test_context_t *context = user_data;
+  goffset offset = context->offset;
+  gboolean result;
+  switch (step)
+    {
+    case SMIE_ADVANCE_TOKENS:
+      if (count > 0)
+	for (; count > 0; count--)
+	  offset = smie_test_forward_token (offset, context->input);
+      else
+	for (; count < 0; count++)
+	  offset = smie_test_backward_token (offset, context->input);
+      result = offset != context->offset;
+      context->offset = offset;
+      return result;
+    default:
+      g_return_val_if_reached (FALSE);
+    }
+}
+
+gboolean
+smie_test_read_func (gchar **token, gpointer user_data)
+{
+  struct smie_test_context_t *context = user_data;
+  goffset end_offset;
+  if (context->offset < 0
+      || context->input[context->offset] == '\0'
+      || g_ascii_isspace (context->input[context->offset]))
+    return FALSE;
+  end_offset = context->offset;
+  while (context->input[end_offset] != '\0'
+	 && !g_ascii_isspace (context->input[end_offset]))
+    end_offset++;
+  *token = g_strndup (&context->input[context->offset],
+		      end_offset - context->offset);
+  return TRUE;
+}

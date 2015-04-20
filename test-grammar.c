@@ -21,22 +21,16 @@
 #endif
 
 #include "smie-grammar.h"
+#include "smie-test.h"
 #include <glib/gprintf.h>
 #include <string.h>
 
+#ifdef DEBUG
 extern void
 smie_debug_dump_prec2_grammar (smie_prec2_grammar_t *grammar);
 extern void
 smie_debug_dump_precs_grammar (smie_precs_grammar_t *grammar);
-extern gboolean
-smie_debug_bnf_grammar_equal (smie_bnf_grammar_t *a,
-			      smie_bnf_grammar_t *b);
-extern gboolean
-smie_debug_prec2_grammar_equal (smie_prec2_grammar_t *a,
-				smie_prec2_grammar_t *b);
-extern gboolean
-smie_debug_precs_grammar_equal (smie_precs_grammar_t *a,
-				smie_precs_grammar_t *b);
+#endif
 
 static smie_bnf_grammar_t *
 populate_bnf_grammar (smie_symbol_pool_t *pool)
@@ -167,73 +161,6 @@ populate_precs_grammar (smie_symbol_pool_t *pool)
   return grammar;
 }
 
-struct context
-{
-  const gchar *input;
-  goffset offset;
-};
-
-static goffset
-forward_token (goffset offset, const gchar *input)
-{
-  while (input[offset] != '\0' && !g_ascii_isspace (input[offset]))
-    offset++;
-  while (input[offset] != '\0' && g_ascii_isspace (input[offset]))
-    offset++;
-  return offset;
-}
-
-static goffset
-backward_token (goffset offset, const gchar *input)
-{
-  while (offset >= 0 && !g_ascii_isspace (input[offset]))
-    offset--;
-  while (offset >= 0 && g_ascii_isspace (input[offset]))
-    offset--;
-  return offset;
-}
-
-static gboolean
-advance_func (smie_advance_step_t step, gint count, gpointer user_data)
-{
-  struct context *context = user_data;
-  goffset offset = context->offset;
-  gboolean result;
-  switch (step)
-    {
-    case SMIE_ADVANCE_TOKENS:
-      if (count > 0)
-	for (; count > 0; count--)
-	  offset = forward_token (offset, context->input);
-      else
-	for (; count < 0; count++)
-	  offset = backward_token (offset, context->input);
-      result = offset != context->offset;
-      context->offset = offset;
-      return result;
-    default:
-      g_return_val_if_reached (FALSE);
-    }
-}
-
-static gboolean
-read_func (gchar **token, gpointer user_data)
-{
-  struct context *context = user_data;
-  goffset end_offset;
-  if (context->offset < 0
-      || context->input[context->offset] == '\0'
-      || g_ascii_isspace (context->input[context->offset]))
-    return FALSE;
-  end_offset = context->offset;
-  while (context->input[end_offset] != '\0'
-	 && !g_ascii_isspace (context->input[end_offset]))
-    end_offset++;
-  *token = g_strndup (&context->input[context->offset],
-		      end_offset - context->offset);
-  return TRUE;
-}
-
 struct fixture
 {
   smie_symbol_pool_t *pool;
@@ -264,7 +191,7 @@ test_construct_bnf (struct fixture *fixture, gconstpointer user_data)
 
   actual = populate_bnf_grammar_from_string (fixture->pool);
   g_assert (actual != NULL);
-  g_assert (smie_debug_bnf_grammar_equal (expected, actual));
+  g_assert (smie_test_bnf_grammar_equal (expected, actual));
   smie_bnf_grammar_free (expected);
   smie_bnf_grammar_free (actual);
 }
@@ -293,7 +220,7 @@ test_construct_prec2 (struct fixture *fixture, gconstpointer user_data)
   error = NULL;
   g_assert (smie_bnf_to_prec2 (fixture->bnf, actual, &error));
   g_assert_no_error (error);
-  g_assert (smie_debug_prec2_grammar_equal (expected, actual));
+  g_assert (smie_test_prec2_grammar_equal (expected, actual));
   smie_prec2_grammar_free (expected);
   smie_prec2_grammar_free (actual);
 }
@@ -322,7 +249,7 @@ test_construct_precs (struct fixture *fixture, gconstpointer user_data)
   error = NULL;
   g_assert (smie_prec2_to_precs (fixture->prec2, actual, &error));
   g_assert_no_error (error);
-  g_assert (smie_debug_precs_grammar_equal (expected, actual));
+  g_assert (smie_test_precs_grammar_equal (expected, actual));
 }
 
 static void
@@ -342,40 +269,57 @@ teardown_movement (struct fixture *fixture, gconstpointer user_data)
 static void
 test_movement_forward (struct fixture *fixture, gconstpointer user_data)
 {
-  struct context context;
+  smie_test_context_t context;
 
   context.input = "# ( 4 + ( 5 x 6 ) + 7 ) + 8 #";
 
   context.offset = 1;
-  smie_forward_sexp (fixture->precs, advance_func, read_func, &context);
+  smie_forward_sexp (fixture->precs,
+		     smie_test_advance_func,
+		     smie_test_read_func,
+		     &context);
   g_assert_cmpint (22, ==, context.offset);
 
   context.offset = 3;
-  smie_forward_sexp (fixture->precs, advance_func, read_func, &context);
+  smie_forward_sexp (fixture->precs,
+		     smie_test_advance_func,
+		     smie_test_read_func,
+		     &context);
   g_assert_cmpint (6, ==, context.offset);
 
   context.offset = 7;
-  smie_forward_sexp (fixture->precs, advance_func, read_func, &context);
+  smie_forward_sexp (fixture->precs,
+		     smie_test_advance_func,
+		     smie_test_read_func,
+		     &context);
   g_assert_cmpint (16, ==, context.offset);
 }
 
 static void
 test_movement_backward (struct fixture *fixture, gconstpointer user_data)
 {
-  struct context context;
+  smie_test_context_t context;
 
   context.input = "# ( 4 + ( 5 x 6 ) + 7 ) + 8 #";
 
   context.offset = 23;
-  smie_backward_sexp (fixture->precs, advance_func, read_func, &context);
+  smie_backward_sexp (fixture->precs,
+		      smie_test_advance_func,
+		      smie_test_read_func,
+		      &context);
   g_assert_cmpint (2, ==, context.offset);
 
   context.offset = 17;
-  smie_backward_sexp (fixture->precs, advance_func, read_func, &context);
+  smie_backward_sexp (fixture->precs,
+		      smie_test_advance_func,
+		      smie_test_read_func, &context);
   g_assert_cmpint (8, ==, context.offset);
 
   context.offset = 7;
-  smie_backward_sexp (fixture->precs, advance_func, read_func, &context);
+  smie_backward_sexp (fixture->precs,
+		      smie_test_advance_func,
+		      smie_test_read_func,
+		      &context);
   g_assert_cmpint (6, ==, context.offset);
 }
 
