@@ -70,15 +70,26 @@ gboolean smie_bnf_grammar_add_rule (smie_bnf_grammar_t *grammar,
 smie_prec2_grammar_t *smie_prec2_grammar_alloc (void);
 void smie_prec2_grammar_free (smie_prec2_grammar_t *grammar);
 gboolean smie_prec2_grammar_add_rule (smie_prec2_grammar_t *grammar,
-				      smie_symbol_t *a,
-				      smie_symbol_t *b,
+				      const smie_symbol_t *a,
+				      const smie_symbol_t *b,
 				      smie_prec2_type_t type);
+gboolean smie_prec2_grammar_add_opener (struct smie_prec2_grammar_t *grammar,
+					const smie_symbol_t *symbol);
+gboolean smie_prec2_grammar_add_closer (struct smie_prec2_grammar_t *grammar,
+					const smie_symbol_t *symbol);
 
 smie_precs_grammar_t *smie_precs_grammar_alloc (void);
 void smie_precs_grammar_free (smie_precs_grammar_t *grammar);
+gboolean smie_precs_grammar_add_rule (smie_precs_grammar_t *grammar,
+				      const smie_symbol_t *symbol,
+				      gint left_prec,
+				      gboolean left_is_parenthesis,
+				      gint right_prec,
+				      gboolean right_is_parenthesis);
 
 gboolean smie_bnf_to_prec2 (smie_bnf_grammar_t *bnf,
-			    smie_prec2_grammar_t *prec2);
+			    smie_prec2_grammar_t *prec2,
+			    GError **error);
 gboolean smie_prec2_to_precs (smie_prec2_grammar_t *prec2,
 			      smie_precs_grammar_t *precs,
 			      GError **error);
