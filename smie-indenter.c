@@ -62,8 +62,8 @@ smie_indenter_ref (struct smie_indenter_t *indenter)
 void
 smie_indenter_unref (struct smie_indenter_t *indenter)
 {
-  g_return_val_if_fail (indenter, NULL);
-  g_return_val_if_fail (indenter->ref_count > 0, NULL);
+  g_return_if_fail (indenter);
+  g_return_if_fail (indenter->ref_count > 0);
   if (g_atomic_int_dec_and_test (&indenter->ref_count))
     smie_indenter_free (indenter);
 }
