@@ -905,15 +905,19 @@ smie_advance_sexp (struct smie_precs_grammar_t *grammar,
 {
   GList *stack = NULL;
 
-  while (TRUE)
+  /* Place the cursor on the token.  */
+  if (!read_func (NULL, callback)
+      && !advance_func (SMIE_ADVANCE_TOKENS, count, callback))
+    return FALSE;
+
+  do
     {
-      gchar *token;
       struct smie_symbol_t symbol;
       struct smie_prec_t *prec;
       gint prec_value;
+      gchar *token;
 
-      if (!advance_func (SMIE_ADVANCE_TOKENS, count, callback)
-	  || !read_func (&token, callback))
+      if (!read_func (&token, callback))
 	return FALSE;
 
       symbol.name = token;
@@ -956,6 +960,9 @@ smie_advance_sexp (struct smie_precs_grammar_t *grammar,
 	    }
 	}
     }
+  while (advance_func (SMIE_ADVANCE_TOKENS, count, callback));
+
+  return FALSE;
 }
 
 gboolean

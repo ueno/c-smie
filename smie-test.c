@@ -223,16 +223,21 @@ gboolean
 smie_test_read_func (gchar **token, gpointer user_data)
 {
   struct smie_test_context_t *context = user_data;
-  goffset end_offset;
+  goffset start_offset, end_offset;
   if (context->offset < 0
       || context->input[context->offset] == '\0'
       || g_ascii_isspace (context->input[context->offset]))
     return FALSE;
+  start_offset = context->offset;
+  while (start_offset - 1 >= 0
+	 && !g_ascii_isspace (context->input[start_offset - 1]))
+    start_offset--;
   end_offset = context->offset;
   while (context->input[end_offset] != '\0'
 	 && !g_ascii_isspace (context->input[end_offset]))
     end_offset++;
-  *token = g_strndup (&context->input[context->offset],
-		      end_offset - context->offset);
+  if (token)
+    *token = g_strndup (&context->input[start_offset],
+			end_offset - (start_offset));
   return TRUE;
 }
