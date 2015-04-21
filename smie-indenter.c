@@ -49,6 +49,7 @@ smie_indenter_new (smie_symbol_pool_t *pool,
 			&& functions->read_char, NULL);
 
   result = g_new0 (struct smie_indenter_t, 1);
+  result->ref_count = 1;
   result->pool = pool;
   result->grammar = grammar;
   result->step = step;
@@ -104,6 +105,12 @@ smie_indenter_calculate (struct smie_indenter_t *indenter,
   gchar *token;
   const smie_symbol_t *symbol;
 
+  /* Check if this is the first line.  */
+  indenter->functions->advance (SMIE_ADVANCE_LINE_ENDS, -1, callback);
+  if (!indenter->functions->advance (SMIE_ADVANCE_CHARACTERS, -1, callback))
+    return 0;
+
+  indenter->functions->advance (SMIE_ADVANCE_CHARACTERS, 1, callback);
   indenter->functions->advance (SMIE_ADVANCE_LINE_ENDS, 1, callback);
   indenter->functions->advance (SMIE_ADVANCE_TOKENS, -1, callback);
 

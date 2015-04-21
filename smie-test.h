@@ -18,6 +18,7 @@
 #ifndef __SMIE_TEST_H__
 #define __SMIE_TEST_H__ 1
 
+#include "smie-indenter.h"
 #include "smie-private.h"
 
 G_BEGIN_DECLS
@@ -39,6 +40,9 @@ struct smie_test_context_t
 gboolean smie_test_advance_func (smie_advance_step_t step, gint count,
 				 gpointer user_data);
 gboolean smie_test_read_func (gchar **token, gpointer user_data);
+gunichar smie_test_read_char_func (gpointer user_data);
+
+smie_cursor_functions_t smie_test_cursor_functions;
 
 G_END_DECLS
 

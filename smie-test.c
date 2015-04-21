@@ -195,7 +195,7 @@ static goffset
 smie_test_end_of_line (goffset offset, const gchar *input)
 {
   while (input[offset] != '\0' && input[offset] != '\n')
-    offset++;
+    offset = smie_test_forward_char (offset, input);
   return offset;
 }
 
@@ -203,7 +203,7 @@ static goffset
 smie_test_beginning_of_line (goffset offset, const gchar *input)
 {
   while (offset > 0 && input[offset] != '\n')
-    offset--;
+    offset = smie_test_backward_char (offset, input);
   return offset;
 }
 
@@ -211,8 +211,8 @@ static goffset
 smie_test_forward_line (goffset offset, const gchar *input)
 {
   offset = smie_test_end_of_line (offset, input);
-  if (input[offset] == '\n')
-    offset++;
+  if (input[offset] != '\0' && input[offset] == '\n')
+    offset = smie_test_forward_char (offset, input);
   return offset;
 }
 
@@ -220,8 +220,8 @@ static goffset
 smie_test_backward_line (goffset offset, const gchar *input)
 {
   offset = smie_test_beginning_of_line (offset, input);
-  if (input[offset] == '\n')
-    offset--;
+  if (offset > 0 && input[offset] == '\n')
+    offset = smie_test_backward_char (offset, input);
   return offset;
 }
 
@@ -229,19 +229,19 @@ static goffset
 smie_test_forward_token (goffset offset, const gchar *input)
 {
   while (input[offset] != '\0' && !g_ascii_isspace (input[offset]))
-    offset++;
+    offset = smie_test_forward_char (offset, input);
   while (input[offset] != '\0' && g_ascii_isspace (input[offset]))
-    offset++;
+    offset = smie_test_forward_char (offset, input);
   return offset;
 }
 
 static goffset
 smie_test_backward_token (goffset offset, const gchar *input)
 {
-  while (offset >= 0 && !g_ascii_isspace (input[offset]))
-    offset--;
-  while (offset >= 0 && g_ascii_isspace (input[offset]))
-    offset--;
+  while (offset > 0 && !g_ascii_isspace (input[offset]))
+    offset = smie_test_backward_char (offset, input);
+  while (offset > 0 && g_ascii_isspace (input[offset]))
+    offset = smie_test_backward_char (offset, input);
   return offset;
 }
 
@@ -314,3 +314,20 @@ smie_test_read_func (gchar **token, gpointer user_data)
 			end_offset - (start_offset));
   return TRUE;
 }
+
+gunichar
+smie_test_read_char_func (gpointer user_data)
+{
+  struct smie_test_context_t *context = user_data;
+  if (context->offset < 0
+      || context->input[context->offset] == '\0')
+    return (gunichar) -1;
+  return g_utf8_get_char_validated (&context->input[context->offset], -1);
+}
+
+smie_cursor_functions_t smie_test_cursor_functions =
+  {
+    smie_test_advance_func,
+    smie_test_read_func,
+    smie_test_read_char_func
+  };

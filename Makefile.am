@@ -19,14 +19,23 @@ libsmie_la_CFLAGS = $(DEPS_CFLAGS)
 libsmie_la_LIBADD = $(DEPS_LIBS)
 libsmie_la_LDFLAGS = -no-undefined -export-symbols-regex '^smie_'
 
-TESTS = test-grammar
+TESTS = test-grammar test-indenter
 
 check_LTLIBRARIES = libtest.la
 libtest_la_SOURCES = smie-test.h smie-test.c
 libtest_la_CFLAGS = $(DEPS_CFLAGS)
 libtest_la_LIBADD = $(DEPS_LIBS)
 
-check_PROGRAMS = test-grammar
+check_PROGRAMS = test-grammar test-indenter
 test_grammar_SOURCES = test-grammar.c
 test_grammar_CFLAGS = $(DEPS_CFLAGS)
 test_grammar_LDADD = libtest.la libsmie.la $(DEPS_LIBS)
+
+test_indenter_SOURCES = test-indenter.c
+test_indenter_CFLAGS = \
+	$(DEPS_CFLAGS) \
+	-DGRAMMAR_FILE=\"$(srcdir)/test.grammar\" \
+	-DINPUT_FILE=\"$(srcdir)/test.input\"
+test_indenter_LDADD = libtest.la libsmie.la $(DEPS_LIBS)
+
+EXTRA_DIST = test.grammar test.input

@@ -419,13 +419,15 @@ smie_bnf_to_prec2 (struct smie_bnf_grammar_t *bnf,
 	  for (l1 = rule->symbols->next; l1; l1 = l1->next)
 	    {
 	      struct smie_symbol_t *a = l1->data;
-	      if (a->type == SMIE_SYMBOL_TERMINAL)
+	      if (a->type == SMIE_SYMBOL_TERMINAL
+		  || a->type == SMIE_SYMBOL_TERMINAL_VAR)
 		{
 		  GList *l2 = l1->next;
 		  if (l2)
 		    {
 		      struct smie_symbol_t *b = l2->data;
-		      if (b->type == SMIE_SYMBOL_TERMINAL)
+		      if (b->type == SMIE_SYMBOL_TERMINAL
+			  || b->type == SMIE_SYMBOL_TERMINAL_VAR)
 			{
 			  struct smie_prec2_t *p
 			    = smie_prec2_alloc (a, b, SMIE_PREC2_EQ);
@@ -440,7 +442,8 @@ smie_bnf_to_prec2 (struct smie_bnf_grammar_t *bnf,
 			  if (l3)
 			    {
 			      struct smie_symbol_t *c = l3->data;
-			      if (c->type == SMIE_SYMBOL_TERMINAL)
+			      if (c->type == SMIE_SYMBOL_TERMINAL
+				  || c->type == SMIE_SYMBOL_TERMINAL_VAR)
 				{
 				  struct smie_prec2_t *p
 				    = smie_prec2_alloc (a, c, SMIE_PREC2_EQ);
@@ -448,6 +451,8 @@ smie_bnf_to_prec2 (struct smie_bnf_grammar_t *bnf,
 				}
 			    }
 			  op_b = g_hash_table_lookup (first_op, b);
+			  if (!op_b)
+			    continue;
 			  g_hash_table_iter_init (&iter_b, op_b);
 			  while (g_hash_table_iter_next (&iter_b, &key_b, NULL))
 			    {
@@ -465,12 +470,15 @@ smie_bnf_to_prec2 (struct smie_bnf_grammar_t *bnf,
 		  if (l2)
 		    {
 		      struct smie_symbol_t *b = l2->data;
-		      if (b->type == SMIE_SYMBOL_TERMINAL)
+		      if (b->type == SMIE_SYMBOL_TERMINAL
+			  || b->type == SMIE_SYMBOL_TERMINAL_VAR)
 			{
 			  GHashTable *op_a;
 			  GHashTableIter iter_a;
 			  gpointer key_a;
 			  op_a = g_hash_table_lookup (last_op, a);
+			  if (!op_a)
+			    continue;
 			  g_hash_table_iter_init (&iter_a, op_a);
 			  while (g_hash_table_iter_next (&iter_a, &key_a, NULL))
 			    {

@@ -125,6 +125,10 @@ yylex (YYSTYPE *lval, smie_symbol_pool_t *pool, smie_bnf_grammar_t *grammar,
   if (*cp == '\0')
     return YYEOF;
 
+  if (*cp == '#')
+    for (; *cp != '\0' && *cp != '\n'; cp++)
+      break;
+
   if (*cp == '"')
     {
       GString *buffer = g_string_new ("");
