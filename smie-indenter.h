@@ -24,11 +24,20 @@ G_BEGIN_DECLS
 
 typedef struct smie_indenter_t smie_indenter_t;
 
+typedef gunichar (*smie_read_char_function_t) (gpointer);
+
+typedef struct smie_cursor_functions_t smie_cursor_functions_t;
+struct smie_cursor_functions_t
+{
+  smie_advance_function_t advance;
+  smie_read_function_t read_token;
+  smie_read_char_function_t read_char;
+};
+
 smie_indenter_t *smie_indenter_new (smie_symbol_pool_t *pool,
 				    smie_precs_grammar_t *grammar,
-				    smie_advance_function_t advance_func,
-				    smie_read_function_t read_func,
-				    smie_read_char_function_t read_char_func);
+				    gint step,
+				    smie_cursor_functions_t *functions);
 smie_indenter_t *smie_indenter_ref (smie_indenter_t *indenter);
 void smie_indenter_unref (smie_indenter_t *indenter);
 gint smie_indenter_calculate (smie_indenter_t *indenter,

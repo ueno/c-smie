@@ -176,6 +176,56 @@ smie_test_precs_grammar_equal (struct smie_precs_grammar_t *a,
 }
 
 static goffset
+smie_test_forward_char (goffset offset, const gchar *input)
+{
+  if (input[offset] != '\0')
+    offset++;
+  return offset;
+}
+
+static goffset
+smie_test_backward_char (goffset offset, const gchar *input)
+{
+  if (offset > 0)
+    offset--;
+  return offset;
+}
+
+static goffset
+smie_test_end_of_line (goffset offset, const gchar *input)
+{
+  while (input[offset] != '\0' && input[offset] != '\n')
+    offset++;
+  return offset;
+}
+
+static goffset
+smie_test_beginning_of_line (goffset offset, const gchar *input)
+{
+  while (offset > 0 && input[offset] != '\n')
+    offset--;
+  return offset;
+}
+
+static goffset
+smie_test_forward_line (goffset offset, const gchar *input)
+{
+  offset = smie_test_end_of_line (offset, input);
+  if (input[offset] == '\n')
+    offset++;
+  return offset;
+}
+
+static goffset
+smie_test_backward_line (goffset offset, const gchar *input)
+{
+  offset = smie_test_beginning_of_line (offset, input);
+  if (input[offset] == '\n')
+    offset--;
+  return offset;
+}
+
+static goffset
 smie_test_forward_token (goffset offset, const gchar *input)
 {
   while (input[offset] != '\0' && !g_ascii_isspace (input[offset]))
@@ -195,28 +245,51 @@ smie_test_backward_token (goffset offset, const gchar *input)
   return offset;
 }
 
+typedef goffset (*smie_test_movement_function_t) (goffset, const gchar *);
+
 gboolean
 smie_test_advance_func (smie_advance_step_t step, gint count,
 			gpointer user_data)
 {
   struct smie_test_context_t *context = user_data;
+  smie_test_movement_function_t forward_func, backward_func;
   goffset offset = context->offset;
   gboolean result;
   switch (step)
     {
+    case SMIE_ADVANCE_CHARACTERS:
+      forward_func = smie_test_forward_char;
+      backward_func = smie_test_backward_char;
+      break;
+
+    case SMIE_ADVANCE_LINES:
+      forward_func = smie_test_forward_line;
+      backward_func = smie_test_backward_line;
+      break;
+
+    case SMIE_ADVANCE_LINE_ENDS:
+      forward_func = smie_test_end_of_line;
+      backward_func = smie_test_beginning_of_line;
+      break;
+
     case SMIE_ADVANCE_TOKENS:
-      if (count > 0)
-	for (; count > 0; count--)
-	  offset = smie_test_forward_token (offset, context->input);
-      else
-	for (; count < 0; count++)
-	  offset = smie_test_backward_token (offset, context->input);
-      result = offset != context->offset;
-      context->offset = offset;
-      return result;
+      forward_func = smie_test_forward_token;
+      backward_func = smie_test_backward_token;
+      break;
+
     default:
       g_return_val_if_reached (FALSE);
     }
+
+  if (count > 0)
+    for (; count > 0; count--)
+      offset = forward_func (offset, context->input);
+  else
+    for (; count < 0; count++)
+      offset = backward_func (offset, context->input);
+  result = offset != context->offset;
+  context->offset = offset;
+  return result;
 }
 
 gboolean

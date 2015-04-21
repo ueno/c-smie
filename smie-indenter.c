@@ -28,24 +28,31 @@ struct smie_indenter_t
 
   smie_symbol_pool_t *pool;
   smie_precs_grammar_t *grammar;
-  smie_advance_function_t advance_func;
-  smie_read_function_t read_func;
-  smie_read_char_function_t read_char_func;
+  smie_cursor_functions_t *functions;
+  gint step;
 };
 
 struct smie_indenter_t *
 smie_indenter_new (smie_symbol_pool_t *pool,
 		   smie_precs_grammar_t *grammar,
-		   smie_advance_function_t advance_func,
-		   smie_read_function_t read_func,
-		   smie_read_char_function_t read_char_func)
+		   gint step,
+		   smie_cursor_functions_t *functions)
 {
-  struct smie_indenter_t *result = g_new0 (struct smie_indenter_t, 1);
+  struct smie_indenter_t *result;
+
+  g_return_val_if_fail (pool, NULL);
+  g_return_val_if_fail (grammar, NULL);
+  g_return_val_if_fail (step >= 0, NULL);
+  g_return_val_if_fail (functions
+			&& functions->advance
+			&& functions->read_token
+			&& functions->read_char, NULL);
+
+  result = g_new0 (struct smie_indenter_t, 1);
   result->pool = pool;
   result->grammar = grammar;
-  result->advance_func = advance_func;
-  result->read_func = read_func;
-  result->read_char_func = read_char_func;
+  result->step = step;
+  result->functions = functions;
   return result;
 }
 
@@ -74,40 +81,48 @@ smie_indenter_unref (struct smie_indenter_t *indenter)
     smie_indenter_free (indenter);
 }
 
+static gint
+smie_indenter_calculate_bol_column (struct smie_indenter_t *indenter,
+				    gpointer callback)
+{
+  gint column = 0;
+  indenter->functions->advance (SMIE_ADVANCE_LINE_ENDS, -1, callback);
+  while (indenter->functions->advance (SMIE_ADVANCE_CHARACTERS, 1, callback))
+    {
+      gunichar uc = indenter->functions->read_char (callback);
+      if (!(0x20 <= uc && uc <= 0x7F && g_ascii_isspace (uc)))
+	break;
+      column++;
+    }
+  return column;
+}
+
 gint
 smie_indenter_calculate (struct smie_indenter_t *indenter,
 			 gpointer callback)
 {
   gchar *token;
   const smie_symbol_t *symbol;
-  gint column = 0;
 
-  indenter->advance_func (SMIE_ADVANCE_LINE_ENDS, 1, callback);
-  indenter->advance_func (SMIE_ADVANCE_TOKENS, -1, callback);
+  indenter->functions->advance (SMIE_ADVANCE_LINE_ENDS, 1, callback);
+  indenter->functions->advance (SMIE_ADVANCE_TOKENS, -1, callback);
 
-  if (indenter->read_func (&token, callback)
-      && (symbol = smie_symbol_intern (indenter->pool,
-				       token,
-				       SMIE_SYMBOL_TERMINAL),
-	  smie_precs_grammar_is_closer (indenter->grammar, symbol)))
-    smie_backward_sexp (indenter->grammar,
-			indenter->advance_func,
-			indenter->read_func,
-			callback);
-  else
+  if (!indenter->functions->read_token (&token, callback))
+    return 0;
+
+  symbol = smie_symbol_intern (indenter->pool, token,
+			       SMIE_SYMBOL_TERMINAL);
+
+  if (smie_precs_grammar_is_closer (indenter->grammar, symbol))
     {
-      indenter->advance_func (SMIE_ADVANCE_LINES, -1, callback);
-      indenter->advance_func (SMIE_ADVANCE_LINE_ENDS, -1, callback);
+      if (smie_backward_sexp (indenter->grammar,
+			      indenter->functions->advance,
+			      indenter->functions->read_token,
+			      callback))
+	return smie_indenter_calculate_bol_column (indenter, callback);
     }
 
-  indenter->advance_func (SMIE_ADVANCE_LINE_ENDS, -1, callback);
-  while (indenter->advance_func (SMIE_ADVANCE_CHARACTERS, 1, callback))
-    {
-      gunichar uc = indenter->read_char_func (callback);
-      if (!(0x20 <= uc && uc <= 0x7F && g_ascii_isspace (uc)))
-	break;
-      column++;
-    }
-
-  return column;
+  indenter->functions->advance (SMIE_ADVANCE_LINES, -1, callback);
+  return indenter->step
+    + smie_indenter_calculate_bol_column (indenter, callback);
 }
