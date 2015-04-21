@@ -30,7 +30,7 @@ typedef struct smie_cursor_functions_t smie_cursor_functions_t;
 struct smie_cursor_functions_t
 {
   smie_advance_function_t advance;
-  smie_read_function_t read_token;
+  smie_read_token_function_t read_token;
   smie_read_char_function_t read_char;
 };
 

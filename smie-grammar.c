@@ -906,7 +906,7 @@ smie_advance_sexp (struct smie_precs_grammar_t *grammar,
 		   enum smie_direction_t direction,
 		   gint count,
 		   smie_advance_function_t advance_func,
-		   smie_read_function_t read_func,
+		   smie_read_token_function_t read_func,
 		   gpointer callback,
 		   smie_select_function_t op_forward,
 		   smie_select_function_t op_backward)
@@ -976,7 +976,7 @@ smie_advance_sexp (struct smie_precs_grammar_t *grammar,
 gboolean
 smie_forward_sexp (struct smie_precs_grammar_t *grammar,
 		   smie_advance_function_t advance_func,
-		   smie_read_function_t read_func,
+		   smie_read_token_function_t read_func,
 		   gpointer callback)
 {
   return smie_advance_sexp (grammar,
@@ -992,7 +992,7 @@ smie_forward_sexp (struct smie_precs_grammar_t *grammar,
 gboolean
 smie_backward_sexp (struct smie_precs_grammar_t *grammar,
 		    smie_advance_function_t advance_func,
-		    smie_read_function_t read_func,
+		    smie_read_token_function_t read_func,
 		    gpointer callback)
 {
   return smie_advance_sexp (grammar,

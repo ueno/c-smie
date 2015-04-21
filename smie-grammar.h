@@ -109,17 +109,17 @@ enum smie_advance_step_t
 
 typedef gboolean (*smie_advance_function_t) (smie_advance_step_t, gint,
 					     gpointer);
-typedef gboolean (*smie_read_function_t) (gchar **, gpointer);
+typedef gboolean (*smie_read_token_function_t) (gchar **, gpointer);
 typedef gunichar (*smie_read_char_function_t) (gpointer);
 
 gboolean smie_forward_sexp (smie_precs_grammar_t *grammar,
 			    smie_advance_function_t advance_func,
-			    smie_read_function_t read_func,
+			    smie_read_token_function_t read_func,
 			    gpointer callback);
 
 gboolean smie_backward_sexp (smie_precs_grammar_t *grammar,
 			     smie_advance_function_t advance_func,
-			     smie_read_function_t read_func,
+			     smie_read_token_function_t read_func,
 			     gpointer callback);
 
 G_END_DECLS
