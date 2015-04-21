@@ -195,7 +195,7 @@ static goffset
 smie_test_end_of_line (goffset offset, const gchar *input)
 {
   while (input[offset] != '\0' && input[offset] != '\n')
-    offset = smie_test_forward_char (offset, input);
+    offset++;
   return offset;
 }
 
@@ -203,7 +203,9 @@ static goffset
 smie_test_beginning_of_line (goffset offset, const gchar *input)
 {
   while (offset > 0 && input[offset] != '\n')
-    offset = smie_test_backward_char (offset, input);
+    offset--;
+  if (input[offset] == '\n')
+    offset++;
   return offset;
 }
 
@@ -211,8 +213,8 @@ static goffset
 smie_test_forward_line (goffset offset, const gchar *input)
 {
   offset = smie_test_end_of_line (offset, input);
-  if (input[offset] != '\0' && input[offset] == '\n')
-    offset = smie_test_forward_char (offset, input);
+  if (input[offset] != '\0' && input[offset + 1] == '\n')
+    offset++;
   return offset;
 }
 
@@ -220,8 +222,11 @@ static goffset
 smie_test_backward_line (goffset offset, const gchar *input)
 {
   offset = smie_test_beginning_of_line (offset, input);
-  if (offset > 0 && input[offset] == '\n')
-    offset = smie_test_backward_char (offset, input);
+  if (offset > 1 && input[offset - 1] == '\n')
+    {
+      offset = smie_test_backward_char (offset, input);
+      offset = smie_test_backward_char (offset, input);
+    }
   return offset;
 }
 
@@ -229,9 +234,9 @@ static goffset
 smie_test_forward_token (goffset offset, const gchar *input)
 {
   while (input[offset] != '\0' && !g_ascii_isspace (input[offset]))
-    offset = smie_test_forward_char (offset, input);
+    offset++;
   while (input[offset] != '\0' && g_ascii_isspace (input[offset]))
-    offset = smie_test_forward_char (offset, input);
+    offset++;
   return offset;
 }
 
@@ -293,7 +298,23 @@ smie_test_advance_func (smie_advance_step_t step, gint count,
 }
 
 gboolean
-smie_test_read_func (gchar **token, gpointer user_data)
+smie_test_inspect_func (smie_inspect_request_t request, gpointer user_data)
+{
+  struct smie_test_context_t *context = user_data;
+  goffset offset2;
+  switch (request)
+    {
+    case SMIE_INSPECT_HAS_PREVIOUS_LINE:
+      offset2 = smie_test_beginning_of_line (context->offset, context->input);
+      return offset2 > 0 && context->input[offset2 - 1] == '\n';
+
+    default:
+      g_return_val_if_reached (FALSE);
+    }
+}
+
+gboolean
+smie_test_read_token_func (gchar **token, gpointer user_data)
 {
   struct smie_test_context_t *context = user_data;
   goffset start_offset, end_offset;
@@ -328,6 +349,7 @@ smie_test_read_char_func (gpointer user_data)
 smie_cursor_functions_t smie_test_cursor_functions =
   {
     smie_test_advance_func,
-    smie_test_read_func,
+    smie_test_inspect_func,
+    smie_test_read_token_func,
     smie_test_read_char_func
   };

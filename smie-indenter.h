@@ -30,6 +30,7 @@ typedef struct smie_cursor_functions_t smie_cursor_functions_t;
 struct smie_cursor_functions_t
 {
   smie_advance_function_t advance;
+  smie_inspect_function_t inspect;
   smie_read_token_function_t read_token;
   smie_read_char_function_t read_char;
 };
@@ -41,7 +42,7 @@ smie_indenter_t *smie_indenter_new (smie_symbol_pool_t *pool,
 smie_indenter_t *smie_indenter_ref (smie_indenter_t *indenter);
 void smie_indenter_unref (smie_indenter_t *indenter);
 gint smie_indenter_calculate (smie_indenter_t *indenter,
-			      gpointer callback);
+			      gpointer context);
 
 G_END_DECLS
 

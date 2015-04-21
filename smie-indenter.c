@@ -45,6 +45,7 @@ smie_indenter_new (smie_symbol_pool_t *pool,
   g_return_val_if_fail (step >= 0, NULL);
   g_return_val_if_fail (functions
 			&& functions->advance
+			&& functions->inspect
 			&& functions->read_token
 			&& functions->read_char, NULL);
 
@@ -84,37 +85,35 @@ smie_indenter_unref (struct smie_indenter_t *indenter)
 
 static gint
 smie_indenter_calculate_bol_column (struct smie_indenter_t *indenter,
-				    gpointer callback)
+				    gpointer context)
 {
   gint column = 0;
-  indenter->functions->advance (SMIE_ADVANCE_LINE_ENDS, -1, callback);
-  while (indenter->functions->advance (SMIE_ADVANCE_CHARACTERS, 1, callback))
+  indenter->functions->advance (SMIE_ADVANCE_LINE_ENDS, -1, context);
+  do
     {
-      gunichar uc = indenter->functions->read_char (callback);
+      gunichar uc = indenter->functions->read_char (context);
       if (!(0x20 <= uc && uc <= 0x7F && g_ascii_isspace (uc)))
 	break;
       column++;
     }
+  while (indenter->functions->advance (SMIE_ADVANCE_CHARACTERS, 1, context));
   return column;
 }
 
 gint
 smie_indenter_calculate (struct smie_indenter_t *indenter,
-			 gpointer callback)
+			 gpointer context)
 {
   gchar *token;
   const smie_symbol_t *symbol;
 
-  /* Check if this is the first line.  */
-  indenter->functions->advance (SMIE_ADVANCE_LINE_ENDS, -1, callback);
-  if (!indenter->functions->advance (SMIE_ADVANCE_CHARACTERS, -1, callback))
+  if (!indenter->functions->inspect (SMIE_INSPECT_HAS_PREVIOUS_LINE, context))
     return 0;
 
-  indenter->functions->advance (SMIE_ADVANCE_CHARACTERS, 1, callback);
-  indenter->functions->advance (SMIE_ADVANCE_LINE_ENDS, 1, callback);
-  indenter->functions->advance (SMIE_ADVANCE_TOKENS, -1, callback);
+  indenter->functions->advance (SMIE_ADVANCE_LINE_ENDS, 1, context);
+  indenter->functions->advance (SMIE_ADVANCE_TOKENS, -1, context);
 
-  if (!indenter->functions->read_token (&token, callback))
+  if (!indenter->functions->read_token (&token, context))
     return 0;
 
   symbol = smie_symbol_intern (indenter->pool, token,
@@ -125,11 +124,11 @@ smie_indenter_calculate (struct smie_indenter_t *indenter,
       if (smie_backward_sexp (indenter->grammar,
 			      indenter->functions->advance,
 			      indenter->functions->read_token,
-			      callback))
-	return smie_indenter_calculate_bol_column (indenter, callback);
+			      context))
+	return smie_indenter_calculate_bol_column (indenter, context);
     }
 
-  indenter->functions->advance (SMIE_ADVANCE_LINES, -1, callback);
+  indenter->functions->advance (SMIE_ADVANCE_LINES, -1, context);
   return indenter->step
-    + smie_indenter_calculate_bol_column (indenter, callback);
+    + smie_indenter_calculate_bol_column (indenter, context);
 }

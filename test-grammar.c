@@ -276,28 +276,28 @@ test_movement_forward (struct fixture *fixture, gconstpointer user_data)
   context.offset = 1;
   smie_forward_sexp (fixture->precs,
 		     smie_test_advance_func,
-		     smie_test_read_func,
+		     smie_test_read_token_func,
 		     &context);
   g_assert_cmpint (22, ==, context.offset);
 
   context.offset = 2;
   smie_forward_sexp (fixture->precs,
 		     smie_test_advance_func,
-		     smie_test_read_func,
+		     smie_test_read_token_func,
 		     &context);
   g_assert_cmpint (22, ==, context.offset);
 
   context.offset = 3;
   smie_forward_sexp (fixture->precs,
 		     smie_test_advance_func,
-		     smie_test_read_func,
+		     smie_test_read_token_func,
 		     &context);
   g_assert_cmpint (6, ==, context.offset);
 
   context.offset = 7;
   smie_forward_sexp (fixture->precs,
 		     smie_test_advance_func,
-		     smie_test_read_func,
+		     smie_test_read_token_func,
 		     &context);
   g_assert_cmpint (16, ==, context.offset);
 }
@@ -312,27 +312,27 @@ test_movement_backward (struct fixture *fixture, gconstpointer user_data)
   context.offset = 23;
   smie_backward_sexp (fixture->precs,
 		      smie_test_advance_func,
-		      smie_test_read_func,
+		      smie_test_read_token_func,
 		      &context);
   g_assert_cmpint (2, ==, context.offset);
 
   context.offset = 22;
   smie_backward_sexp (fixture->precs,
 		      smie_test_advance_func,
-		      smie_test_read_func,
+		      smie_test_read_token_func,
 		      &context);
   g_assert_cmpint (2, ==, context.offset);
 
   context.offset = 17;
   smie_backward_sexp (fixture->precs,
 		      smie_test_advance_func,
-		      smie_test_read_func, &context);
+		      smie_test_read_token_func, &context);
   g_assert_cmpint (8, ==, context.offset);
 
   context.offset = 7;
   smie_backward_sexp (fixture->precs,
 		      smie_test_advance_func,
-		      smie_test_read_func,
+		      smie_test_read_token_func,
 		      &context);
   g_assert_cmpint (6, ==, context.offset);
 }

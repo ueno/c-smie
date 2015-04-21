@@ -907,15 +907,15 @@ smie_advance_sexp (struct smie_precs_grammar_t *grammar,
 		   gint count,
 		   smie_advance_function_t advance_func,
 		   smie_read_token_function_t read_func,
-		   gpointer callback,
+		   gpointer context,
 		   smie_select_function_t op_forward,
 		   smie_select_function_t op_backward)
 {
   GList *stack = NULL;
 
   /* Place the cursor on the token.  */
-  if (!read_func (NULL, callback)
-      && !advance_func (SMIE_ADVANCE_TOKENS, count, callback))
+  if (!read_func (NULL, context)
+      && !advance_func (SMIE_ADVANCE_TOKENS, count, context))
     return FALSE;
 
   do
@@ -925,7 +925,7 @@ smie_advance_sexp (struct smie_precs_grammar_t *grammar,
       gint prec_value;
       gchar *token;
 
-      if (!read_func (&token, callback))
+      if (!read_func (&token, context))
 	return FALSE;
 
       symbol.name = token;
@@ -968,7 +968,7 @@ smie_advance_sexp (struct smie_precs_grammar_t *grammar,
 	    }
 	}
     }
-  while (advance_func (SMIE_ADVANCE_TOKENS, count, callback));
+  while (advance_func (SMIE_ADVANCE_TOKENS, count, context));
 
   return FALSE;
 }
@@ -977,14 +977,14 @@ gboolean
 smie_forward_sexp (struct smie_precs_grammar_t *grammar,
 		   smie_advance_function_t advance_func,
 		   smie_read_token_function_t read_func,
-		   gpointer callback)
+		   gpointer context)
 {
   return smie_advance_sexp (grammar,
 			    SMIE_DIRECTION_FORWARD,
 			    1,
 			    advance_func,
 			    read_func,
-			    callback,
+			    context,
 			    smie_select_right,
 			    smie_select_left);
 }
@@ -993,14 +993,14 @@ gboolean
 smie_backward_sexp (struct smie_precs_grammar_t *grammar,
 		    smie_advance_function_t advance_func,
 		    smie_read_token_function_t read_func,
-		    gpointer callback)
+		    gpointer context)
 {
   return smie_advance_sexp (grammar,
 			    SMIE_DIRECTION_BACKWARD,
 			    -1,
 			    advance_func,
 			    read_func,
-			    callback,
+			    context,
 			    smie_select_left,
 			    smie_select_right);
 }
