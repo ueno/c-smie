@@ -111,6 +111,10 @@ test_basic (struct fixture *fixture, gconstpointer user_data)
   column = smie_indenter_calculate (fixture->indenter, &context);
   g_assert_cmpint (0, ==, column);
 
+  context.offset = 34;
+  column = smie_indenter_calculate (fixture->indenter, &context);
+  g_assert_cmpint (2, ==, column);
+
   context.offset = 45;
   column = smie_indenter_calculate (fixture->indenter, &context);
   g_assert_cmpint (4, ==, column);
