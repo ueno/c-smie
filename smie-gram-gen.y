@@ -21,20 +21,18 @@
 #include <config.h>
 #endif
 
-#include "smie-grammar.h"
+#include "smie-private.h"
 #include "smie-gram-gen.h"
 static int yylex (YYSTYPE *lval,
-		  smie_symbol_pool_t *pool,
 		  smie_bnf_grammar_t *grammar,
 		  const gchar **input,
 		  GError **error);
-static void yyerror (smie_symbol_pool_t *pool,
-		     smie_bnf_grammar_t *grammar,
+static void yyerror (smie_bnf_grammar_t *grammar,
 		     const gchar **input,
 		     GError **error,
 		     const char *string);
 %}
-%param {smie_symbol_pool_t *pool} {smie_bnf_grammar_t *grammar} {const gchar **input} {GError **error}
+%param {smie_bnf_grammar_t *grammar} {const gchar **input} {GError **error}
 %define api.pure full
 
 %union {
@@ -63,7 +61,7 @@ rule:	NONTERMINAL ':' sentences ';'
 	    {
 	      GList *l2 = l->data;
 	      const smie_symbol_t *symbol
-		= smie_symbol_intern (pool, nonterminal,
+		= smie_symbol_intern (grammar->pool, nonterminal,
 				      SMIE_SYMBOL_NON_TERMINAL);
 	      GList *rule = g_list_prepend (l2, (gpointer) symbol);
 	      smie_bnf_grammar_add_rule (grammar, rule);
@@ -95,17 +93,17 @@ symbols:	symbol
 
 symbol:	NONTERMINAL
 	{
-	  $$ = smie_symbol_intern (pool, $1, SMIE_SYMBOL_NON_TERMINAL);
+	  $$ = smie_symbol_intern (grammar->pool, $1, SMIE_SYMBOL_NON_TERMINAL);
 	  g_free ($1);
 	}
 	| TERMINAL
 	{
-	  $$ = smie_symbol_intern (pool, $1, SMIE_SYMBOL_TERMINAL);
+	  $$ = smie_symbol_intern (grammar->pool, $1, SMIE_SYMBOL_TERMINAL);
 	  g_free ($1);
 	}
 	| TERMINALVAR
 	{
-	  $$ = smie_symbol_intern (pool, $1, SMIE_SYMBOL_TERMINAL_VAR);
+	  $$ = smie_symbol_intern (grammar->pool, $1, SMIE_SYMBOL_TERMINAL_VAR);
 	  g_free ($1);
 	}
 	;
@@ -113,7 +111,7 @@ symbol:	NONTERMINAL
 %%
 
 static int
-yylex (YYSTYPE *lval, smie_symbol_pool_t *pool, smie_bnf_grammar_t *grammar,
+yylex (YYSTYPE *lval, smie_bnf_grammar_t *grammar,
        const gchar **input, GError **error)
 {
   const char *cp = *input;
@@ -186,7 +184,7 @@ yylex (YYSTYPE *lval, smie_symbol_pool_t *pool, smie_bnf_grammar_t *grammar,
 }
 
 static void
-yyerror (smie_symbol_pool_t *pool, smie_bnf_grammar_t *grammar,
+yyerror (smie_bnf_grammar_t *grammar,
 	 const gchar **input, GError **error, const char *string)
 {
   g_set_error_literal (error, SMIE_ERROR, SMIE_ERROR_GRAMMAR, string);

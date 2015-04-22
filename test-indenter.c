@@ -59,26 +59,26 @@ setup (struct fixture *fixture, gconstpointer user_data)
   g_assert (fixture->grammar_addr);
 
   error = NULL;
-  bnf = smie_bnf_grammar_from_string (pool,
-				      (const gchar *) fixture->grammar_addr,
-				      &error);
+  bnf = smie_bnf_grammar_alloc (pool);
+  smie_bnf_grammar_load (bnf,
+			 (const gchar *) fixture->grammar_addr,
+			 &error);
   g_assert (bnf);
   g_assert_no_error (error);
 
   error = NULL;
-  prec2 = smie_prec2_grammar_alloc ();
+  prec2 = smie_prec2_grammar_alloc (pool);
   g_assert (smie_bnf_to_prec2 (bnf, prec2, &error));
   g_assert_no_error (error);
   smie_bnf_grammar_free (bnf);
 
   error = NULL;
-  precs = smie_precs_grammar_alloc ();
+  precs = smie_precs_grammar_alloc (pool);
   smie_prec2_to_precs (prec2, precs, &error);
   g_assert_no_error (error);
   smie_prec2_grammar_free (prec2);
 
-  fixture->indenter = smie_indenter_new (pool,
-					 precs,
+  fixture->indenter = smie_indenter_new (precs,
 					 2,
 					 &smie_test_cursor_functions);
 

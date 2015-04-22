@@ -24,6 +24,7 @@ G_BEGIN_DECLS
 
 struct smie_symbol_pool_t
 {
+  volatile gint ref_count;
   GHashTable *allocated;
 };
 
@@ -45,6 +46,7 @@ struct smie_rule_list_t
 
 struct smie_bnf_grammar_t
 {
+  struct smie_symbol_pool_t *pool;
   GHashTable *rules;
 };
 
@@ -57,6 +59,7 @@ struct smie_prec2_t
 
 struct smie_prec2_grammar_t
 {
+  struct smie_symbol_pool_t *pool;
   GHashTable *prec2;
   GHashTable *openers;
   GHashTable *closers;
@@ -96,6 +99,7 @@ struct smie_prec_t
 
 struct smie_precs_grammar_t
 {
+  struct smie_symbol_pool_t *pool;
   GHashTable *precs;
 };
 

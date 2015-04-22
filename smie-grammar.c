@@ -73,6 +73,7 @@ struct smie_symbol_pool_t *
 smie_symbol_pool_alloc (void)
 {
   struct smie_symbol_pool_t *result = g_new0 (struct smie_symbol_pool_t, 1);
+  result->ref_count = 1;
   result->allocated = g_hash_table_new_full (smie_symbol_hash,
 					     smie_symbol_equal,
 					     (GDestroyNotify) smie_symbol_free,
@@ -81,10 +82,28 @@ smie_symbol_pool_alloc (void)
 }
 
 void
-smie_symbol_pool_free (smie_symbol_pool_t *pool)
+smie_symbol_pool_free (struct smie_symbol_pool_t *pool)
 {
   g_hash_table_destroy (pool->allocated);
   g_free (pool);
+}
+
+struct smie_symbol_pool_t *
+smie_symbol_pool_ref (struct smie_symbol_pool_t *pool)
+{
+  g_return_val_if_fail (pool, NULL);
+  g_return_val_if_fail (pool->ref_count > 0, NULL);
+  g_atomic_int_inc (&pool->ref_count);
+  return pool;
+}
+
+void
+smie_symbol_pool_unref (struct smie_symbol_pool_t *pool)
+{
+  g_return_if_fail (pool);
+  g_return_if_fail (pool->ref_count > 0);
+  if (g_atomic_int_dec_and_test (&pool->ref_count))
+    smie_symbol_pool_free (pool);
 }
 
 static struct smie_rule_t *
@@ -116,9 +135,10 @@ smie_rule_list_free (struct smie_rule_list_t *rules)
 }
 
 struct smie_bnf_grammar_t *
-smie_bnf_grammar_alloc (void)
+smie_bnf_grammar_alloc (struct smie_symbol_pool_t *pool)
 {
   struct smie_bnf_grammar_t *result = g_new0 (struct smie_bnf_grammar_t, 1);
+  result->pool = smie_symbol_pool_ref (pool);
   result->rules = g_hash_table_new_full (smie_symbol_hash,
 					 smie_symbol_equal,
 					 NULL,
@@ -129,8 +149,23 @@ smie_bnf_grammar_alloc (void)
 void
 smie_bnf_grammar_free (struct smie_bnf_grammar_t *bnf)
 {
+  smie_symbol_pool_unref (bnf->pool);
   g_hash_table_destroy (bnf->rules);
   g_free (bnf);
+}
+
+gboolean
+smie_bnf_grammar_load (struct smie_bnf_grammar_t *grammar,
+		       const gchar *input,
+		       GError **error)
+{
+  const gchar *cp = input;
+  if (yyparse (grammar, &cp, error) != 0)
+    {
+      smie_bnf_grammar_free (grammar);
+      return FALSE;
+    }
+  return TRUE;
 }
 
 gboolean
@@ -200,9 +235,10 @@ smie_prec2_free (struct smie_prec2_t *prec2)
 }
 
 struct smie_prec2_grammar_t *
-smie_prec2_grammar_alloc (void)
+smie_prec2_grammar_alloc (struct smie_symbol_pool_t *pool)
 {
   struct smie_prec2_grammar_t *result = g_new0 (struct smie_prec2_grammar_t, 1);
+  result->pool = smie_symbol_pool_ref (pool);
   result->prec2 = g_hash_table_new_full (smie_prec2_hash,
 					 smie_prec2_equal,
 					 (GDestroyNotify) smie_prec2_free,
@@ -215,6 +251,7 @@ smie_prec2_grammar_alloc (void)
 void
 smie_prec2_grammar_free (struct smie_prec2_grammar_t *grammar)
 {
+  smie_symbol_pool_unref (grammar->pool);
   g_hash_table_destroy (grammar->prec2);
   g_hash_table_destroy (grammar->openers);
   g_hash_table_destroy (grammar->closers);
@@ -233,22 +270,27 @@ smie_prec2_grammar_add_rule (struct smie_prec2_grammar_t *grammar,
 
 gboolean
 smie_prec2_grammar_add_opener (struct smie_prec2_grammar_t *grammar,
-			       const struct smie_symbol_t *symbol)
+			       const gchar *token)
 {
+  const struct smie_symbol_t *symbol
+    = smie_symbol_intern (grammar->pool, token, SMIE_SYMBOL_TERMINAL);
   return g_hash_table_add (grammar->openers, (gpointer) symbol);
 }
 
 gboolean
 smie_prec2_grammar_add_closer (struct smie_prec2_grammar_t *grammar,
-			       const struct smie_symbol_t *symbol)
+			       const gchar *token)
 {
+  const struct smie_symbol_t *symbol
+    = smie_symbol_intern (grammar->pool, token, SMIE_SYMBOL_TERMINAL);
   return g_hash_table_add (grammar->closers, (gpointer) symbol);
 }
 
 struct smie_precs_grammar_t *
-smie_precs_grammar_alloc (void)
+smie_precs_grammar_alloc (struct smie_symbol_pool_t *pool)
 {
   struct smie_precs_grammar_t *result = g_new0 (struct smie_precs_grammar_t, 1);
+  result->pool = smie_symbol_pool_ref (pool);
   result->precs = g_hash_table_new_full (smie_symbol_hash,
 					 smie_symbol_equal,
 					 NULL,
@@ -259,6 +301,7 @@ smie_precs_grammar_alloc (void)
 void
 smie_precs_grammar_free (struct smie_precs_grammar_t *grammar)
 {
+  smie_symbol_pool_unref (grammar->pool);
   g_hash_table_destroy (grammar->precs);
   g_free (grammar);
 }
@@ -1011,25 +1054,12 @@ smie_error_quark (void)
   return g_quark_from_static_string ("smie-error-quark");
 }
 
-struct smie_bnf_grammar_t *
-smie_bnf_grammar_from_string (struct smie_symbol_pool_t *pool,
-			      const gchar *input,
-			      GError **error)
-{
-  struct smie_bnf_grammar_t *grammar = smie_bnf_grammar_alloc ();
-  const gchar *cp = input;
-  if (yyparse (pool, grammar, &cp, error) != 0)
-    {
-      smie_bnf_grammar_free (grammar);
-      return NULL;
-    }
-  return grammar;
-}
-
 gboolean
 smie_precs_grammar_is_opener (struct smie_precs_grammar_t *grammar,
-			      const struct smie_symbol_t *symbol)
+			      const gchar *token)
 {
+  const struct smie_symbol_t *symbol
+    = smie_symbol_intern (grammar->pool, token, SMIE_SYMBOL_TERMINAL);
   struct smie_prec_t *prec
     = g_hash_table_lookup (grammar->precs, (gpointer) symbol);
   return prec && prec->left_is_parenthesis;
@@ -1037,8 +1067,10 @@ smie_precs_grammar_is_opener (struct smie_precs_grammar_t *grammar,
 
 gboolean
 smie_precs_grammar_is_closer (struct smie_precs_grammar_t *grammar,
-			      const struct smie_symbol_t *symbol)
+			      const gchar *token)
 {
+  const struct smie_symbol_t *symbol
+    = smie_symbol_intern (grammar->pool, token, SMIE_SYMBOL_TERMINAL);
   struct smie_prec_t *prec
     = g_hash_table_lookup (grammar->precs, (gpointer) symbol);
   return prec && prec->right_is_parenthesis;

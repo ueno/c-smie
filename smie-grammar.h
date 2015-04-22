@@ -46,6 +46,7 @@ enum smie_prec2_type_t
 
 smie_symbol_pool_t *smie_symbol_pool_alloc (void);
 void smie_symbol_pool_free (smie_symbol_pool_t *pool);
+void smie_symbol_pool_unref (smie_symbol_pool_t *pool);
 
 const smie_symbol_t *smie_symbol_intern (smie_symbol_pool_t *pool,
 					 const gchar *name,
@@ -59,27 +60,30 @@ enum smie_error_code_t
     SMIE_ERROR_GRAMMAR
   };
 
-smie_bnf_grammar_t *smie_bnf_grammar_alloc (void);
-smie_bnf_grammar_t *smie_bnf_grammar_from_string (smie_symbol_pool_t *pool,
-						  const gchar *input,
-						  GError **error);
+smie_bnf_grammar_t *smie_bnf_grammar_alloc (smie_symbol_pool_t *pool);
 void smie_bnf_grammar_free (smie_bnf_grammar_t *grammar);
+
+gboolean smie_bnf_grammar_load (smie_bnf_grammar_t *grammar,
+				const gchar *input,
+				GError **error);
 gboolean smie_bnf_grammar_add_rule (smie_bnf_grammar_t *grammar,
 				    GList *symbols);
 
-smie_prec2_grammar_t *smie_prec2_grammar_alloc (void);
+smie_prec2_grammar_t *smie_prec2_grammar_alloc (smie_symbol_pool_t *pool);
 void smie_prec2_grammar_free (smie_prec2_grammar_t *grammar);
 gboolean smie_prec2_grammar_add_rule (smie_prec2_grammar_t *grammar,
 				      const smie_symbol_t *a,
 				      const smie_symbol_t *b,
 				      smie_prec2_type_t type);
 gboolean smie_prec2_grammar_add_opener (smie_prec2_grammar_t *grammar,
-					const smie_symbol_t *symbol);
+					const gchar *token);
 gboolean smie_prec2_grammar_add_closer (smie_prec2_grammar_t *grammar,
-					const smie_symbol_t *symbol);
+					const gchar *token);
 
-smie_precs_grammar_t *smie_precs_grammar_alloc (void);
+smie_precs_grammar_t *smie_precs_grammar_alloc (smie_symbol_pool_t *pool);
 void smie_precs_grammar_free (smie_precs_grammar_t *grammar);
+smie_precs_grammar_t *smie_precs_grammar_ref (smie_precs_grammar_t *grammar);
+void smie_precs_grammar_unref (smie_precs_grammar_t *grammar);
 gboolean smie_precs_grammar_add_rule (smie_precs_grammar_t *grammar,
 				      const smie_symbol_t *symbol,
 				      gint left_prec,
@@ -87,9 +91,9 @@ gboolean smie_precs_grammar_add_rule (smie_precs_grammar_t *grammar,
 				      gint right_prec,
 				      gboolean right_is_parenthesis);
 gboolean smie_precs_grammar_is_opener (smie_precs_grammar_t *grammar,
-				       const smie_symbol_t *symbol);
+				       const gchar *token);
 gboolean smie_precs_grammar_is_closer (smie_precs_grammar_t *grammar,
-				       const smie_symbol_t *symbol);
+				       const gchar *token);
 
 gboolean smie_bnf_to_prec2 (smie_bnf_grammar_t *bnf,
 			    smie_prec2_grammar_t *prec2,

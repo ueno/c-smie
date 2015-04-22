@@ -35,7 +35,7 @@ smie_debug_dump_precs_grammar (smie_precs_grammar_t *grammar);
 static smie_bnf_grammar_t *
 populate_bnf_grammar (smie_symbol_pool_t *pool)
 {
-  smie_bnf_grammar_t *grammar = smie_bnf_grammar_alloc ();
+  smie_bnf_grammar_t *grammar = smie_bnf_grammar_alloc (pool);
   GList *rule;
 
 #define NT(x) \
@@ -90,12 +90,13 @@ populate_bnf_grammar_from_string (smie_symbol_pool_t *pool)
   GError *error;
 
   error = NULL;
-  grammar = smie_bnf_grammar_from_string (pool, "\
+  grammar = smie_bnf_grammar_alloc (pool);
+  smie_bnf_grammar_load (grammar, "\
 s: \"#\" e \"#\";\n\
 e: e \"+\" t | t;\n\
 t: t \"x\" f | f;\n\
 f: N | \"(\" e \")\";",
-				       &error);
+			 &error);
   g_assert_no_error (error);
   return grammar;
 }
@@ -103,7 +104,7 @@ f: N | \"(\" e \")\";",
 static smie_prec2_grammar_t *
 populate_prec2_grammar (smie_symbol_pool_t *pool)
 {
-  smie_prec2_grammar_t *grammar = smie_prec2_grammar_alloc ();
+  smie_prec2_grammar_t *grammar = smie_prec2_grammar_alloc (pool);
 
 #define T(x) \
   smie_symbol_intern (pool, (x), SMIE_SYMBOL_TERMINAL)
@@ -133,8 +134,8 @@ populate_prec2_grammar (smie_symbol_pool_t *pool)
   ADD (")", GT, "x");
   ADD (")", GT, ")");
 
-  smie_prec2_grammar_add_opener (grammar, T ("("));
-  smie_prec2_grammar_add_closer (grammar, T (")"));
+  smie_prec2_grammar_add_opener (grammar, "(");
+  smie_prec2_grammar_add_closer (grammar, ")");
 
 #undef ADD
 #undef T
@@ -145,7 +146,7 @@ populate_prec2_grammar (smie_symbol_pool_t *pool)
 static smie_precs_grammar_t *
 populate_precs_grammar (smie_symbol_pool_t *pool)
 {
-  smie_precs_grammar_t *grammar = smie_precs_grammar_alloc ();
+  smie_precs_grammar_t *grammar = smie_precs_grammar_alloc (pool);
 
 #define T(x) \
   smie_symbol_intern (pool, (x), SMIE_SYMBOL_TERMINAL)
@@ -206,7 +207,6 @@ setup_prec2 (struct fixture *fixture, gconstpointer user_data)
 static void
 teardown_prec2 (struct fixture *fixture, gconstpointer user_data)
 {
-  smie_symbol_pool_free (fixture->pool);
   smie_bnf_grammar_free (fixture->bnf);
 }
 
@@ -216,7 +216,7 @@ test_construct_prec2 (struct fixture *fixture, gconstpointer user_data)
   smie_prec2_grammar_t *expected, *actual;
   GError *error;
   expected = populate_prec2_grammar (fixture->pool);
-  actual = smie_prec2_grammar_alloc ();
+  actual = smie_prec2_grammar_alloc (fixture->pool);
   error = NULL;
   g_assert (smie_bnf_to_prec2 (fixture->bnf, actual, &error));
   g_assert_no_error (error);
@@ -236,7 +236,6 @@ static void
 teardown_precs (struct fixture *fixture, gconstpointer user_data)
 {
   smie_prec2_grammar_free (fixture->prec2);
-  smie_symbol_pool_free (fixture->pool);
 }
 
 static void
@@ -245,7 +244,7 @@ test_construct_precs (struct fixture *fixture, gconstpointer user_data)
   smie_precs_grammar_t *expected, *actual;
   GError *error;
   expected = populate_precs_grammar (fixture->pool);
-  actual = smie_precs_grammar_alloc ();
+  actual = smie_precs_grammar_alloc (fixture->pool);
   error = NULL;
   g_assert (smie_prec2_to_precs (fixture->prec2, actual, &error));
   g_assert_no_error (error);
@@ -263,7 +262,6 @@ static void
 teardown_movement (struct fixture *fixture, gconstpointer user_data)
 {
   smie_precs_grammar_free (fixture->precs);
-  smie_symbol_pool_free (fixture->pool);
 }
 
 static void

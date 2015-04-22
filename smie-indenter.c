@@ -26,21 +26,18 @@ struct smie_indenter_t
 {
   volatile gint ref_count;
 
-  smie_symbol_pool_t *pool;
   smie_precs_grammar_t *grammar;
   smie_cursor_functions_t *functions;
   gint step;
 };
 
 struct smie_indenter_t *
-smie_indenter_new (smie_symbol_pool_t *pool,
-		   smie_precs_grammar_t *grammar,
+smie_indenter_new (smie_precs_grammar_t *grammar,
 		   gint step,
 		   smie_cursor_functions_t *functions)
 {
   struct smie_indenter_t *result;
 
-  g_return_val_if_fail (pool, NULL);
   g_return_val_if_fail (grammar, NULL);
   g_return_val_if_fail (step >= 0, NULL);
   g_return_val_if_fail (functions
@@ -51,7 +48,6 @@ smie_indenter_new (smie_symbol_pool_t *pool,
 
   result = g_new0 (struct smie_indenter_t, 1);
   result->ref_count = 1;
-  result->pool = pool;
   result->grammar = grammar;
   result->step = step;
   result->functions = functions;
@@ -105,7 +101,6 @@ smie_indenter_calculate (struct smie_indenter_t *indenter,
 			 gpointer context)
 {
   gchar *token;
-  const smie_symbol_t *symbol;
 
   if (!indenter->functions->inspect (SMIE_INSPECT_HAS_PREVIOUS_LINE, context))
     return 0;
@@ -116,10 +111,7 @@ smie_indenter_calculate (struct smie_indenter_t *indenter,
   if (!indenter->functions->read_token (&token, context))
     return 0;
 
-  symbol = smie_symbol_intern (indenter->pool, token,
-			       SMIE_SYMBOL_TERMINAL);
-
-  if (smie_precs_grammar_is_closer (indenter->grammar, symbol))
+  if (smie_precs_grammar_is_closer (indenter->grammar, token))
     {
       if (smie_backward_sexp (indenter->grammar,
 			      indenter->functions->advance,
