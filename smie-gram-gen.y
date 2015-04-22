@@ -103,7 +103,7 @@ symbol:	NONTERMINAL
 	}
 	| TERMINALVAR
 	{
-	  $$ = smie_symbol_intern (grammar->pool, $1, SMIE_SYMBOL_TERMINAL_VAR);
+	  $$ = smie_symbol_intern (grammar->pool, $1, SMIE_SYMBOL_TERMINAL_VARIABLE);
 	  g_free ($1);
 	}
 	;

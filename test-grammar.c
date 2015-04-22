@@ -43,7 +43,7 @@ populate_bnf_grammar (smie_symbol_pool_t *pool)
 #define T(x)						\
   smie_symbol_intern (pool, (x), SMIE_SYMBOL_TERMINAL)
 #define TV(x)							\
-  smie_symbol_intern (pool, (x), SMIE_SYMBOL_TERMINAL_VAR)
+  smie_symbol_intern (pool, (x), SMIE_SYMBOL_TERMINAL_VARIABLE)
 #define CONS(car,cdr)				\
   g_list_prepend ((cdr), (gpointer) (car))
 

@@ -463,14 +463,14 @@ smie_bnf_to_prec2 (struct smie_bnf_grammar_t *bnf,
 	    {
 	      struct smie_symbol_t *a = l1->data;
 	      if (a->type == SMIE_SYMBOL_TERMINAL
-		  || a->type == SMIE_SYMBOL_TERMINAL_VAR)
+		  || a->type == SMIE_SYMBOL_TERMINAL_VARIABLE)
 		{
 		  GList *l2 = l1->next;
 		  if (l2)
 		    {
 		      struct smie_symbol_t *b = l2->data;
 		      if (b->type == SMIE_SYMBOL_TERMINAL
-			  || b->type == SMIE_SYMBOL_TERMINAL_VAR)
+			  || b->type == SMIE_SYMBOL_TERMINAL_VARIABLE)
 			{
 			  struct smie_prec2_t *p
 			    = smie_prec2_alloc (a, b, SMIE_PREC2_EQ);
@@ -486,7 +486,7 @@ smie_bnf_to_prec2 (struct smie_bnf_grammar_t *bnf,
 			    {
 			      struct smie_symbol_t *c = l3->data;
 			      if (c->type == SMIE_SYMBOL_TERMINAL
-				  || c->type == SMIE_SYMBOL_TERMINAL_VAR)
+				  || c->type == SMIE_SYMBOL_TERMINAL_VARIABLE)
 				{
 				  struct smie_prec2_t *p
 				    = smie_prec2_alloc (a, c, SMIE_PREC2_EQ);
@@ -514,7 +514,7 @@ smie_bnf_to_prec2 (struct smie_bnf_grammar_t *bnf,
 		    {
 		      struct smie_symbol_t *b = l2->data;
 		      if (b->type == SMIE_SYMBOL_TERMINAL
-			  || b->type == SMIE_SYMBOL_TERMINAL_VAR)
+			  || b->type == SMIE_SYMBOL_TERMINAL_VARIABLE)
 			{
 			  GHashTable *op_a;
 			  GHashTableIter iter_a;

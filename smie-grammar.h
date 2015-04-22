@@ -32,7 +32,7 @@ typedef enum smie_symbol_type_t smie_symbol_type_t;
 enum smie_symbol_type_t
   {
     SMIE_SYMBOL_TERMINAL,
-    SMIE_SYMBOL_TERMINAL_VAR,
+    SMIE_SYMBOL_TERMINAL_VARIABLE,
     SMIE_SYMBOL_NON_TERMINAL
   };
 
