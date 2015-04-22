@@ -44,7 +44,7 @@ setup (struct fixture *fixture, gconstpointer user_data)
   smie_symbol_pool_t *pool = smie_symbol_pool_alloc ();
   smie_bnf_grammar_t *bnf;
   smie_prec2_grammar_t *prec2;
-  smie_precs_grammar_t *precs;
+  smie_grammar_t *precs;
   int fd;
   struct stat statbuf;
   GError *error;
@@ -73,7 +73,7 @@ setup (struct fixture *fixture, gconstpointer user_data)
   smie_bnf_grammar_free (bnf);
 
   error = NULL;
-  precs = smie_precs_grammar_alloc (pool);
+  precs = smie_grammar_alloc (pool);
   smie_prec2_to_precs (prec2, precs, &error);
   g_assert_no_error (error);
   smie_prec2_grammar_free (prec2);
@@ -87,7 +87,7 @@ setup (struct fixture *fixture, gconstpointer user_data)
   g_assert (fstat (fd, &statbuf) >= 0);
   fixture->input_size = statbuf.st_size;
   fixture->input_addr = mmap (NULL, fixture->input_size,
-				PROT_READ, MAP_SHARED, fd, 0);
+			      PROT_READ, MAP_SHARED, fd, 0);
   close (fd);
   g_assert (fixture->input_addr);
 }

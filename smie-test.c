@@ -37,7 +37,7 @@ smie_rule_equal (struct smie_rule_t *a,
 
 static gboolean
 smie_rule_list_equal (struct smie_rule_list_t *a,
-			    struct smie_rule_list_t *b)
+		      struct smie_rule_list_t *b)
 {
   struct { GList *from, *to; } permutations[2];
   gint i;
@@ -71,7 +71,7 @@ smie_rule_list_equal (struct smie_rule_list_t *a,
 
 gboolean
 smie_test_bnf_grammar_equal (struct smie_bnf_grammar_t *a,
-			 struct smie_bnf_grammar_t *b)
+			     struct smie_bnf_grammar_t *b)
 {
   struct { GHashTable *from, *to; } permutations[2];
   gint i;
@@ -101,7 +101,7 @@ smie_test_bnf_grammar_equal (struct smie_bnf_grammar_t *a,
 
 gboolean
 smie_test_prec2_grammar_equal (struct smie_prec2_grammar_t *a,
-			   struct smie_prec2_grammar_t *b)
+			       struct smie_prec2_grammar_t *b)
 {
   struct { struct smie_prec2_grammar_t *from, *to; } permutations[2];
   gint i;
@@ -146,10 +146,10 @@ smie_test_prec2_grammar_equal (struct smie_prec2_grammar_t *a,
 }
 
 gboolean
-smie_test_precs_grammar_equal (struct smie_precs_grammar_t *a,
-			   struct smie_precs_grammar_t *b)
+smie_test_grammar_equal (struct smie_grammar_t *a,
+			 struct smie_grammar_t *b)
 {
-  struct { struct smie_precs_grammar_t *from, *to; } permutations[2];
+  struct { struct smie_grammar_t *from, *to; } permutations[2];
   gint i;
 
   permutations[0].from = a;

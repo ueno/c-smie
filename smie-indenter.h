@@ -35,7 +35,7 @@ struct smie_cursor_functions_t
   smie_read_char_function_t read_char;
 };
 
-smie_indenter_t *smie_indenter_new (smie_precs_grammar_t *grammar,
+smie_indenter_t *smie_indenter_new (smie_grammar_t *grammar,
 				    gint step,
 				    smie_cursor_functions_t *functions);
 smie_indenter_t *smie_indenter_ref (smie_indenter_t *indenter);

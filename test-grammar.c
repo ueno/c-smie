@@ -29,7 +29,7 @@
 extern void
 smie_debug_dump_prec2_grammar (smie_prec2_grammar_t *grammar);
 extern void
-smie_debug_dump_precs_grammar (smie_precs_grammar_t *grammar);
+smie_debug_dump_grammar (smie_grammar_t *grammar);
 #endif
 
 static smie_bnf_grammar_t *
@@ -38,11 +38,11 @@ populate_bnf_grammar (smie_symbol_pool_t *pool)
   smie_bnf_grammar_t *grammar = smie_bnf_grammar_alloc (pool);
   GList *rule;
 
-#define NT(x) \
+#define NT(x)							\
   smie_symbol_intern (pool, (x), SMIE_SYMBOL_NON_TERMINAL)
-#define T(x) \
+#define T(x)						\
   smie_symbol_intern (pool, (x), SMIE_SYMBOL_TERMINAL)
-#define TV(x) \
+#define TV(x)							\
   smie_symbol_intern (pool, (x), SMIE_SYMBOL_TERMINAL_VAR)
 #define CONS(car,cdr)				\
   g_list_prepend ((cdr), (gpointer) (car))
@@ -106,9 +106,9 @@ populate_prec2_grammar (smie_symbol_pool_t *pool)
 {
   smie_prec2_grammar_t *grammar = smie_prec2_grammar_alloc (pool);
 
-#define T(x) \
+#define T(x)						\
   smie_symbol_intern (pool, (x), SMIE_SYMBOL_TERMINAL)
-#define ADD(left,op,right) \
+#define ADD(left,op,right)						\
   smie_prec2_grammar_add_rule (grammar, T(left), T(right), SMIE_PREC2_ ## op);
 
   ADD ("#", EQ, "#");
@@ -143,19 +143,19 @@ populate_prec2_grammar (smie_symbol_pool_t *pool)
   return grammar;
 }
 
-static smie_precs_grammar_t *
-populate_precs_grammar (smie_symbol_pool_t *pool)
+static smie_grammar_t *
+populate_grammar (smie_symbol_pool_t *pool)
 {
-  smie_precs_grammar_t *grammar = smie_precs_grammar_alloc (pool);
+  smie_grammar_t *grammar = smie_grammar_alloc (pool);
 
-#define T(x) \
+#define T(x)						\
   smie_symbol_intern (pool, (x), SMIE_SYMBOL_TERMINAL)
 
-  smie_precs_grammar_add_rule (grammar, T ("#"), 0, FALSE, 0, FALSE);
-  smie_precs_grammar_add_rule (grammar, T ("("), 0, TRUE, 5, FALSE);
-  smie_precs_grammar_add_rule (grammar, T ("+"), 2, FALSE, 1, FALSE);
-  smie_precs_grammar_add_rule (grammar, T ("x"), 4, FALSE, 3, FALSE);
-  smie_precs_grammar_add_rule (grammar, T (")"), 5, FALSE, 0, TRUE);
+  smie_grammar_add_rule (grammar, T ("#"), 0, FALSE, 0, FALSE);
+  smie_grammar_add_rule (grammar, T ("("), 0, TRUE, 5, FALSE);
+  smie_grammar_add_rule (grammar, T ("+"), 2, FALSE, 1, FALSE);
+  smie_grammar_add_rule (grammar, T ("x"), 4, FALSE, 3, FALSE);
+  smie_grammar_add_rule (grammar, T (")"), 5, FALSE, 0, TRUE);
 
 #undef T
 
@@ -167,7 +167,7 @@ struct fixture
   smie_symbol_pool_t *pool;
   smie_bnf_grammar_t *bnf;
   smie_prec2_grammar_t *prec2;
-  smie_precs_grammar_t *precs;
+  smie_grammar_t *precs;
 };
 
 static void
@@ -241,27 +241,27 @@ teardown_precs (struct fixture *fixture, gconstpointer user_data)
 static void
 test_construct_precs (struct fixture *fixture, gconstpointer user_data)
 {
-  smie_precs_grammar_t *expected, *actual;
+  smie_grammar_t *expected, *actual;
   GError *error;
-  expected = populate_precs_grammar (fixture->pool);
-  actual = smie_precs_grammar_alloc (fixture->pool);
+  expected = populate_grammar (fixture->pool);
+  actual = smie_grammar_alloc (fixture->pool);
   error = NULL;
   g_assert (smie_prec2_to_precs (fixture->prec2, actual, &error));
   g_assert_no_error (error);
-  g_assert (smie_test_precs_grammar_equal (expected, actual));
+  g_assert (smie_test_grammar_equal (expected, actual));
 }
 
 static void
 setup_movement (struct fixture *fixture, gconstpointer user_data)
 {
   fixture->pool = smie_symbol_pool_alloc ();
-  fixture->precs = populate_precs_grammar (fixture->pool);
+  fixture->precs = populate_grammar (fixture->pool);
 }
 
 static void
 teardown_movement (struct fixture *fixture, gconstpointer user_data)
 {
-  smie_precs_grammar_free (fixture->precs);
+  smie_grammar_free (fixture->precs);
 }
 
 static void

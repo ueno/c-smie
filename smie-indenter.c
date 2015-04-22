@@ -26,13 +26,13 @@ struct smie_indenter_t
 {
   volatile gint ref_count;
 
-  smie_precs_grammar_t *grammar;
+  smie_grammar_t *grammar;
   smie_cursor_functions_t *functions;
   gint step;
 };
 
 struct smie_indenter_t *
-smie_indenter_new (smie_precs_grammar_t *grammar,
+smie_indenter_new (smie_grammar_t *grammar,
 		   gint step,
 		   smie_cursor_functions_t *functions)
 {
@@ -57,7 +57,7 @@ smie_indenter_new (smie_precs_grammar_t *grammar,
 static void
 smie_indenter_free (struct smie_indenter_t *indenter)
 {
-  smie_precs_grammar_free (indenter->grammar);
+  smie_grammar_free (indenter->grammar);
   g_free (indenter);
 }
 
@@ -111,7 +111,7 @@ smie_indenter_calculate (struct smie_indenter_t *indenter,
   if (!indenter->functions->read_token (&token, context))
     return 0;
 
-  if (smie_precs_grammar_is_closer (indenter->grammar, token))
+  if (smie_grammar_is_closer (indenter->grammar, token))
     {
       if (smie_backward_sexp (indenter->grammar,
 			      indenter->functions->advance,

@@ -97,7 +97,7 @@ struct smie_prec_t
   gboolean right_is_parenthesis;
 };
 
-struct smie_precs_grammar_t
+struct smie_grammar_t
 {
   struct smie_symbol_pool_t *pool;
   GHashTable *precs;

@@ -27,8 +27,8 @@ gboolean smie_test_bnf_grammar_equal (smie_bnf_grammar_t *a,
 				      smie_bnf_grammar_t *b);
 gboolean smie_test_prec2_grammar_equal (smie_prec2_grammar_t *a,
 					smie_prec2_grammar_t *b);
-gboolean smie_test_precs_grammar_equal (smie_precs_grammar_t *a,
-					smie_precs_grammar_t *b);
+gboolean smie_test_grammar_equal (smie_grammar_t *a,
+				  smie_grammar_t *b);
 
 typedef struct smie_test_context_t smie_test_context_t;
 struct smie_test_context_t
