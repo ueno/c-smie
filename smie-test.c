@@ -123,20 +123,20 @@ smie_test_prec2_grammar_equal (struct smie_prec2_grammar_t *a,
 					     &key1, &value1))
 	    return FALSE;
 	}
-      g_hash_table_iter_init (&iter, permutations[i].from->openers);
+      g_hash_table_iter_init (&iter, permutations[i].from->first);
       while (g_hash_table_iter_next (&iter, &key, &value))
 	{
 	  gpointer key1, value1;
-	  if (!g_hash_table_lookup_extended (permutations[i].to->openers, key,
+	  if (!g_hash_table_lookup_extended (permutations[i].to->first, key,
 					     &key1, &value1)
 	      || key != key1)
 	    return FALSE;
 	}
-      g_hash_table_iter_init (&iter, permutations[i].from->closers);
+      g_hash_table_iter_init (&iter, permutations[i].from->last);
       while (g_hash_table_iter_next (&iter, &key, &value))
 	{
 	  gpointer key1, value1;
-	  if (!g_hash_table_lookup_extended (permutations[i].to->closers, key,
+	  if (!g_hash_table_lookup_extended (permutations[i].to->last, key,
 					     &key1, &value1)
 	      || key != key1)
 	    return FALSE;

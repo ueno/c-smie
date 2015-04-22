@@ -87,9 +87,9 @@ void smie_grammar_unref (smie_grammar_t *grammar);
 gboolean smie_grammar_add_rule (smie_grammar_t *grammar,
 				const smie_symbol_t *symbol,
 				gint left_prec,
-				gboolean left_is_parenthesis,
+				gboolean left_is_first,
 				gint right_prec,
-				gboolean right_is_parenthesis);
+				gboolean right_is_last);
 gboolean smie_grammar_is_opener (smie_grammar_t *grammar,
 				 const gchar *token);
 gboolean smie_grammar_is_closer (smie_grammar_t *grammar,
