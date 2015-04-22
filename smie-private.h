@@ -54,7 +54,6 @@ struct smie_prec2_t
 {
   const struct smie_symbol_t *left;
   const struct smie_symbol_t *right;
-  enum smie_prec2_type_t type;
 };
 
 struct smie_prec2_grammar_t

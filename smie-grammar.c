@@ -203,8 +203,7 @@ static guint
 smie_prec2_hash (gconstpointer key)
 {
   const struct smie_prec2_t *prec2 = key;
-  return smie_symbol_hash (prec2->left) ^ smie_symbol_hash (prec2->right)
-    ^ g_int_hash (&prec2->type);
+  return smie_symbol_hash (prec2->left) ^ smie_symbol_hash (prec2->right);
 }
 
 static gboolean
@@ -212,26 +211,18 @@ smie_prec2_equal (gconstpointer a, gconstpointer b)
 {
   const struct smie_prec2_t *ap = a;
   const struct smie_prec2_t *bp = b;
-  return ap->type == bp->type && smie_symbol_equal (ap->left, bp->left)
+  return smie_symbol_equal (ap->left, bp->left)
     && smie_symbol_equal (ap->right, bp->right);
 }
 
 static struct smie_prec2_t *
 smie_prec2_alloc (const struct smie_symbol_t *left,
-		  const struct smie_symbol_t *right,
-		  enum smie_prec2_type_t type)
+		  const struct smie_symbol_t *right)
 {
   struct smie_prec2_t *result = g_new0 (struct smie_prec2_t, 1);
   result->left = left;
   result->right = right;
-  result->type = type;
   return result;
-}
-
-static void
-smie_prec2_free (struct smie_prec2_t *prec2)
-{
-  g_free (prec2);
 }
 
 struct smie_prec2_grammar_t *
@@ -241,7 +232,7 @@ smie_prec2_grammar_alloc (struct smie_symbol_pool_t *pool)
   result->pool = smie_symbol_pool_ref (pool);
   result->prec2 = g_hash_table_new_full (smie_prec2_hash,
 					 smie_prec2_equal,
-					 (GDestroyNotify) smie_prec2_free,
+					 g_free,
 					 NULL);
   result->openers = g_hash_table_new (smie_symbol_hash, smie_symbol_equal);
   result->closers = g_hash_table_new (smie_symbol_hash, smie_symbol_equal);
@@ -264,8 +255,15 @@ smie_prec2_grammar_add_rule (struct smie_prec2_grammar_t *grammar,
 			     const struct smie_symbol_t *b,
 			     enum smie_prec2_type_t type)
 {
-  struct smie_prec2_t *prec2 = smie_prec2_alloc (a, b, type);
-  return g_hash_table_add (grammar->prec2, prec2);
+  struct smie_prec2_t *prec2 = smie_prec2_alloc (a, b);
+  gpointer value;
+
+  if (g_hash_table_lookup_extended (grammar->prec2, prec2, NULL, &value)
+      && GPOINTER_TO_INT (value) != type)
+    return FALSE;
+
+  g_hash_table_insert (grammar->prec2, prec2, GINT_TO_POINTER (type));
+  return TRUE;
 }
 
 gboolean
@@ -473,8 +471,9 @@ smie_bnf_to_prec2 (struct smie_bnf_grammar_t *bnf,
 			  || b->type == SMIE_SYMBOL_TERMINAL_VARIABLE)
 			{
 			  struct smie_prec2_t *p
-			    = smie_prec2_alloc (a, b, SMIE_PREC2_EQ);
-			  g_hash_table_add (prec2->prec2, p);
+			    = smie_prec2_alloc (a, b);
+			  gpointer v = GINT_TO_POINTER (SMIE_PREC2_EQ);
+			  g_hash_table_insert (prec2->prec2, p, v);
 			}
 		      else if (b->type == SMIE_SYMBOL_NON_TERMINAL)
 			{
@@ -489,8 +488,9 @@ smie_bnf_to_prec2 (struct smie_bnf_grammar_t *bnf,
 				  || c->type == SMIE_SYMBOL_TERMINAL_VARIABLE)
 				{
 				  struct smie_prec2_t *p
-				    = smie_prec2_alloc (a, c, SMIE_PREC2_EQ);
-				  g_hash_table_add (prec2->prec2, p);
+				    = smie_prec2_alloc (a, c);
+				  gpointer v = GINT_TO_POINTER (SMIE_PREC2_EQ);
+				  g_hash_table_insert (prec2->prec2, p, v);
 				}
 			    }
 			  op_b = g_hash_table_lookup (first_op, b);
@@ -501,8 +501,9 @@ smie_bnf_to_prec2 (struct smie_bnf_grammar_t *bnf,
 			    {
 			      struct smie_symbol_t *d = key_b;
 			      struct smie_prec2_t *p
-				= smie_prec2_alloc (a, d, SMIE_PREC2_LT);
-			      g_hash_table_add (prec2->prec2, p);
+				= smie_prec2_alloc (a, d);
+			      gpointer v = GINT_TO_POINTER (SMIE_PREC2_LT);
+			      g_hash_table_insert (prec2->prec2, p, v);
 			    }
 			}
 		    }
@@ -527,8 +528,9 @@ smie_bnf_to_prec2 (struct smie_bnf_grammar_t *bnf,
 			    {
 			      struct smie_symbol_t *e = key_a;
 			      struct smie_prec2_t *p
-				= smie_prec2_alloc (e, b, SMIE_PREC2_GT);
-			      g_hash_table_add (prec2->prec2, p);
+				= smie_prec2_alloc (e, b);
+			      gpointer v = GINT_TO_POINTER (SMIE_PREC2_GT);
+			      g_hash_table_insert (prec2->prec2, p, v);
 			    }
 			}
 		    }
@@ -547,15 +549,16 @@ void
 smie_debug_dump_prec2_grammar (struct smie_prec2_grammar_t *grammar)
 {
   GHashTableIter iter;
-  gpointer key;
+  gpointer key, value;
   g_hash_table_iter_init (&iter, grammar->prec2);
-  while (g_hash_table_iter_next (&iter, &key, NULL))
+  while (g_hash_table_iter_next (&iter, &key, &value))
     {
       struct smie_prec2_t *prec2 = key;
+      enum smie_prec2_type_t type = GPOINTER_TO_INT (value);
       g_printf ("%s %c %s\n",
 		prec2->left->name,
-		prec2->type == SMIE_PREC2_EQ ? '='
-		: prec2->type == SMIE_PREC2_LT ? '<' : '>',
+		type == SMIE_PREC2_EQ ? '='
+		: type == SMIE_PREC2_LT ? '<' : '>',
 		prec2->right->name);
     }
 }
@@ -716,9 +719,10 @@ smie_prec2_to_precs (struct smie_prec2_grammar_t *prec2,
   gpointer key, value;
   gboolean result = TRUE;
   g_hash_table_iter_init (&iter, prec2->prec2);
-  while (g_hash_table_iter_next (&iter, &key, NULL))
+  while (g_hash_table_iter_next (&iter, &key, &value))
     {
       struct smie_prec2_t *p2 = key;
+      enum smie_prec2_type_t p2_type = GPOINTER_TO_INT (value);
       struct smie_func_t func, *f, *g, *fg;
 
       func.u.symbol = p2->left;
@@ -743,7 +747,7 @@ smie_prec2_to_precs (struct smie_prec2_grammar_t *prec2,
 	  g_hash_table_add (allocated, g);
 	}
 
-      switch (p2->type)
+      switch (p2_type)
 	{
 	case SMIE_PREC2_LT:
 	  g_hash_table_add (unassigned, smie_func2_alloc (f, g));
