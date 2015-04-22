@@ -108,37 +108,48 @@ populate_prec2_grammar (smie_symbol_pool_t *pool)
 
 #define T(x)						\
   smie_symbol_intern (pool, (x), SMIE_SYMBOL_TERMINAL)
+#define TV(x)							\
+  smie_symbol_intern (pool, (x), SMIE_SYMBOL_TERMINAL_VARIABLE)
 #define ADD(left,op,right)						\
-  smie_prec2_grammar_add_rule (grammar, T(left), T(right), SMIE_PREC2_ ## op);
+  smie_prec2_grammar_add_rule (grammar, (left), (right), SMIE_PREC2_ ## op);
 
-  ADD ("#", EQ, "#");
-  ADD ("#", LT, "+");
-  ADD ("#", LT, "x");
-  ADD ("#", LT, "(");
-  ADD ("+", GT, "#");
-  ADD ("+", GT, "+");
-  ADD ("+", LT, "x");
-  ADD ("+", LT, "(");
-  ADD ("+", GT, ")");
-  ADD ("x", GT, "#");
-  ADD ("x", GT, "+");
-  ADD ("x", GT, "x");
-  ADD ("x", LT, "(");
-  ADD ("x", GT, ")");
-  ADD ("(", LT, "+");
-  ADD ("(", LT, "x");
-  ADD ("(", LT, "(");
-  ADD ("(", EQ, ")");
-  ADD (")", GT, "#");
-  ADD (")", GT, "+");
-  ADD (")", GT, "x");
-  ADD (")", GT, ")");
+  ADD (T ("#"), EQ, T ("#"));
+  ADD (T ("#"), LT, T ("+"));
+  ADD (T ("#"), LT, T ("x"));
+  ADD (T ("#"), LT, T ("("));
+  ADD (T ("#"), LT, TV ("N"));
+  ADD (T ("+"), GT, T ("#"));
+  ADD (T ("+"), GT, T ("+"));
+  ADD (T ("+"), LT, T ("x"));
+  ADD (T ("+"), LT, T ("("));
+  ADD (T ("+"), GT, T (")"));
+  ADD (T ("+"), LT, TV ("N"));
+  ADD (T ("x"), GT, T ("#"));
+  ADD (T ("x"), GT, T ("+"));
+  ADD (T ("x"), GT, T ("x"));
+  ADD (T ("x"), LT, T ("("));
+  ADD (T ("x"), GT, T (")"));
+  ADD (T ("x"), LT, TV ("N"));
+  ADD (T ("("), LT, T ("+"));
+  ADD (T ("("), LT, T ("x"));
+  ADD (T ("("), LT, T ("("));
+  ADD (T ("("), EQ, T (")"));
+  ADD (T ("("), LT, TV ("N"));
+  ADD (T (")"), GT, T ("#"));
+  ADD (T (")"), GT, T ("+"));
+  ADD (T (")"), GT, T ("x"));
+  ADD (T (")"), GT, T (")"));
+  ADD (TV ("N"), GT, T ("+"));
+  ADD (TV ("N"), GT, T (")"));
+  ADD (TV ("N"), GT, T ("x"));
+  ADD (TV ("N"), GT, T ("#"));
 
   smie_prec2_grammar_add_opener (grammar, "(");
   smie_prec2_grammar_add_closer (grammar, ")");
 
 #undef ADD
 #undef T
+#undef TV
 
   return grammar;
 }
@@ -150,14 +161,18 @@ populate_grammar (smie_symbol_pool_t *pool)
 
 #define T(x)						\
   smie_symbol_intern (pool, (x), SMIE_SYMBOL_TERMINAL)
+#define TV(x)							\
+  smie_symbol_intern (pool, (x), SMIE_SYMBOL_TERMINAL_VARIABLE)
 
-  smie_grammar_add_rule (grammar, T ("#"), 0, FALSE, 0, FALSE);
-  smie_grammar_add_rule (grammar, T ("("), 0, TRUE, 5, FALSE);
-  smie_grammar_add_rule (grammar, T ("+"), 2, FALSE, 1, FALSE);
-  smie_grammar_add_rule (grammar, T ("x"), 4, FALSE, 3, FALSE);
-  smie_grammar_add_rule (grammar, T (")"), 5, FALSE, 0, TRUE);
+  smie_grammar_add_rule (grammar, T ("#"), 1, FALSE, 1, FALSE);
+  smie_grammar_add_rule (grammar, T ("("), 0, TRUE, 56, FALSE);
+  smie_grammar_add_rule (grammar, T ("+"), 23, FALSE, 12, FALSE);
+  smie_grammar_add_rule (grammar, T ("x"), 45, FALSE, 34, FALSE);
+  smie_grammar_add_rule (grammar, T (")"), 57, FALSE, 0, TRUE);
+  smie_grammar_add_rule (grammar, TV ("N"), 58, FALSE, 59, FALSE);
 
 #undef T
+#undef TV
 
   return grammar;
 }

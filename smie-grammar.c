@@ -335,7 +335,8 @@ smie_bnf_grammar_build_op_set (struct smie_bnf_grammar_t *bnf,
 	      for (; r != rule->symbols; r = r->prev)
 		{
 		  struct smie_symbol_t *b = r->data;
-		  if (b->type == SMIE_SYMBOL_TERMINAL)
+		  if (b->type == SMIE_SYMBOL_TERMINAL
+		      || b->type == SMIE_SYMBOL_TERMINAL_VARIABLE)
 		    {
 		      g_hash_table_add (op_a, b);
 		      break;
@@ -348,7 +349,8 @@ smie_bnf_grammar_build_op_set (struct smie_bnf_grammar_t *bnf,
 	      for (; r; r = r->next)
 		{
 		  struct smie_symbol_t *b = r->data;
-		  if (b->type == SMIE_SYMBOL_TERMINAL)
+		  if (b->type == SMIE_SYMBOL_TERMINAL
+		      || b->type == SMIE_SYMBOL_TERMINAL_VARIABLE)
 		    {
 		      g_hash_table_add (op_a, b);
 		      break;
@@ -475,7 +477,8 @@ smie_bnf_to_prec2 (struct smie_bnf_grammar_t *bnf,
 			  gpointer v = GINT_TO_POINTER (SMIE_PREC2_EQ);
 			  g_hash_table_insert (prec2->prec2, p, v);
 			}
-		      else if (b->type == SMIE_SYMBOL_NON_TERMINAL)
+		      else if (b->type == SMIE_SYMBOL_NON_TERMINAL
+			       || b->type == SMIE_SYMBOL_TERMINAL_VARIABLE)
 			{
 			  GHashTable *op_b;
 			  GHashTableIter iter_b;
@@ -718,6 +721,27 @@ smie_prec2_to_precs (struct smie_prec2_grammar_t *prec2,
   GHashTableIter iter;
   gpointer key, value;
   gboolean result = TRUE;
+
+  /* Allocate all possible functions.  */
+  g_hash_table_iter_init (&iter, precs->pool->allocated);
+  while (g_hash_table_iter_next (&iter, &key, NULL))
+    {
+      struct smie_symbol_t *symbol = key;
+      if (symbol->type == SMIE_SYMBOL_TERMINAL
+	  || symbol->type == SMIE_SYMBOL_TERMINAL_VARIABLE)
+	{
+	  struct smie_func_t *func;
+	  func = g_new0 (struct smie_func_t, 1);
+	  func->u.symbol = key;
+	  func->type = SMIE_FUNC_F;
+	  g_hash_table_add (allocated, func);
+	  func = g_new0 (struct smie_func_t, 1);
+	  func->u.symbol = key;
+	  func->type = SMIE_FUNC_G;
+	  g_hash_table_add (allocated, func);
+	}
+    }
+
   g_hash_table_iter_init (&iter, prec2->prec2);
   while (g_hash_table_iter_next (&iter, &key, &value))
     {
@@ -727,25 +751,17 @@ smie_prec2_to_precs (struct smie_prec2_grammar_t *prec2,
 
       func.u.symbol = p2->left;
       func.type = SMIE_FUNC_F;
-      if (!g_hash_table_lookup_extended (allocated,
-					 &func,
-					 (gpointer *) &f,
-					 NULL))
-	{
-	  f = g_memdup (&func, sizeof (struct smie_func_t));
-	  g_hash_table_add (allocated, f);
-	}
+      g_hash_table_lookup_extended (allocated,
+				    &func,
+				    (gpointer *) &f,
+				    NULL);
 
       func.u.symbol = p2->right;
       func.type = SMIE_FUNC_G;
-      if (!g_hash_table_lookup_extended (allocated,
-					 &func,
-					 (gpointer *) &g,
-					 NULL))
-	{
-	  g = g_memdup (&func, sizeof (struct smie_func_t));
-	  g_hash_table_add (allocated, g);
-	}
+      g_hash_table_lookup_extended (allocated,
+				    &func,
+				    (gpointer *) &g,
+				    NULL);
 
       switch (p2_type)
 	{
@@ -829,9 +845,13 @@ smie_prec2_to_precs (struct smie_prec2_grammar_t *prec2,
       for (l = to_remove; l; l = l->next)
 	{
 	  struct smie_func_t *func = l->data;
-	  g_hash_table_insert (assigned,
-			       func,
-			       GINT_TO_POINTER (iteration_count));
+	  if (!g_hash_table_contains (assigned, func))
+	    {
+	      g_hash_table_insert (assigned,
+				   func,
+				   GINT_TO_POINTER (iteration_count));
+	      iteration_count++;
+	    }
 	  g_hash_table_iter_init (&iter, unassigned);
 	  while (g_hash_table_iter_next (&iter, &key, NULL))
 	    {
@@ -841,7 +861,7 @@ smie_prec2_to_precs (struct smie_prec2_grammar_t *prec2,
 	    }
 	}
       g_list_free (to_remove);
-      iteration_count++;
+      iteration_count += 10;
     }
   g_hash_table_destroy (unassigned);
 
@@ -870,7 +890,9 @@ smie_prec2_to_precs (struct smie_prec2_grammar_t *prec2,
       struct smie_func_t *func = key;
       if (func->type != SMIE_FUNC_COMPOSED
 	  && !g_hash_table_contains (assigned, func))
-	g_hash_table_insert (assigned, func, GINT_TO_POINTER (iteration_count));
+	g_hash_table_insert (assigned,
+			     func,
+			     GINT_TO_POINTER (iteration_count++));
     }
 
   g_hash_table_iter_init (&iter, assigned);
@@ -1001,8 +1023,8 @@ smie_advance_sexp (struct smie_grammar_t *grammar,
 	    {
 	      struct smie_prec_t *prec2 = stack->data;
 	      gint prec_value2;
-	      op_backward (prec, &prec_value);
-	      op_forward (prec2, &prec_value2);
+	      op_forward (prec, &prec_value);
+	      op_backward (prec2, &prec_value2);
 	      if (prec_value == prec_value2)
 		stack = g_list_delete_link (stack, stack);
 	      if (stack)
@@ -1017,7 +1039,8 @@ smie_advance_sexp (struct smie_grammar_t *grammar,
     }
   while (advance_func (SMIE_ADVANCE_TOKENS, count, context));
 
- out:  g_list_free (stack);
+ out:
+  g_list_free (stack);
   return FALSE;
 }
 
