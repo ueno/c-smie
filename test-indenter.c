@@ -77,6 +77,7 @@ setup (struct fixture *fixture, gconstpointer user_data)
   smie_prec2_to_precs (prec2, precs, &error);
   g_assert_no_error (error);
   smie_prec2_grammar_free (prec2);
+  smie_symbol_pool_unref (pool);
 
   fixture->indenter = smie_indenter_new (precs,
 					 2,

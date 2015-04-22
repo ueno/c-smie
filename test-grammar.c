@@ -207,6 +207,7 @@ setup_prec2 (struct fixture *fixture, gconstpointer user_data)
 static void
 teardown_prec2 (struct fixture *fixture, gconstpointer user_data)
 {
+  smie_symbol_pool_unref (fixture->pool);
   smie_bnf_grammar_free (fixture->bnf);
 }
 
@@ -235,6 +236,7 @@ setup_precs (struct fixture *fixture, gconstpointer user_data)
 static void
 teardown_precs (struct fixture *fixture, gconstpointer user_data)
 {
+  smie_symbol_pool_unref (fixture->pool);
   smie_prec2_grammar_free (fixture->prec2);
 }
 
@@ -249,6 +251,8 @@ test_construct_precs (struct fixture *fixture, gconstpointer user_data)
   g_assert (smie_prec2_to_precs (fixture->prec2, actual, &error));
   g_assert_no_error (error);
   g_assert (smie_test_grammar_equal (expected, actual));
+  smie_grammar_free (expected);
+  smie_grammar_free (actual);
 }
 
 static void
@@ -261,6 +265,7 @@ setup_movement (struct fixture *fixture, gconstpointer user_data)
 static void
 teardown_movement (struct fixture *fixture, gconstpointer user_data)
 {
+  smie_symbol_pool_unref (fixture->pool);
   smie_grammar_free (fixture->precs);
 }
 

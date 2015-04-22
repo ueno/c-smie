@@ -969,7 +969,7 @@ smie_advance_sexp (struct smie_grammar_t *grammar,
       gchar *token;
 
       if (!read_func (&token, context))
-	return FALSE;
+	goto out;
 
       symbol.name = token;
       symbol.type = SMIE_SYMBOL_TERMINAL;
@@ -1007,12 +1007,13 @@ smie_advance_sexp (struct smie_grammar_t *grammar,
 		    stack = g_list_prepend (stack, prec);
 		}
 	      else if (op_forward (prec, &prec_value))
-		return FALSE;
+		goto out;
 	    }
 	}
     }
   while (advance_func (SMIE_ADVANCE_TOKENS, count, context));
 
+ out:  g_list_free (stack);
   return FALSE;
 }
 

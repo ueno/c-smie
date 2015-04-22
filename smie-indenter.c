@@ -101,6 +101,7 @@ smie_indenter_calculate (struct smie_indenter_t *indenter,
 			 gpointer context)
 {
   gchar *token;
+  gboolean result;
 
   if (!indenter->functions->inspect (SMIE_INSPECT_HAS_PREVIOUS_LINE, context))
     return 0;
@@ -111,7 +112,9 @@ smie_indenter_calculate (struct smie_indenter_t *indenter,
   if (!indenter->functions->read_token (&token, context))
     return 0;
 
-  if (smie_grammar_is_closer (indenter->grammar, token))
+  result = smie_grammar_is_closer (indenter->grammar, token);
+  g_free (token);
+  if (result)
     {
       if (smie_backward_sexp (indenter->grammar,
 			      indenter->functions->advance,
