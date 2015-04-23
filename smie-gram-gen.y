@@ -117,37 +117,37 @@ yylex (YYSTYPE *lval, smie_bnf_grammar_t *grammar,
   const char *cp = *input;
 
   for (; *cp != '\0'; cp++)
-    if (!g_ascii_isspace (*cp))
+    {
+      if (*cp == '#')
+	for (; *cp != '\0' && *cp != '\n'; cp++)
+	  ;
+      if (!g_ascii_isspace (*cp))
 	break;
+    }
 
   if (*cp == '\0')
     return YYEOF;
 
-  if (*cp == '#')
-    for (; *cp != '\0' && *cp != '\n'; cp++)
-      break;
-
-  if (*cp == '"')
+  if (*cp == '"' || *cp == '\'')
     {
       GString *buffer = g_string_new ("");
+      gchar delimiter = *cp;
+
       cp++;
       for (; *cp != '\0'; cp++)
 	{
-	  switch (*cp)
+	  if (*cp == delimiter)
 	    {
-	    case '"':
 	      cp++;
 	      break;
-	    case '\\':
+	    }
+	  else if (*cp == '\\')
+	    {
 	      cp++;
 	      if (*cp == '\0')
 		break;
-	      /* FALLTHROUGH */
-	    default:
-	      g_string_append_c (buffer, *cp);
-	      continue;
 	    }
-	  break;
+	  g_string_append_c (buffer, *cp);
 	}
       lval->tval = g_string_free (buffer, FALSE);
       *input = cp;
@@ -179,6 +179,7 @@ yylex (YYSTYPE *lval, smie_bnf_grammar_t *grammar,
       *input = cp;
       return NONTERMINAL;
     }
+
   *input = cp + 1;
   return *cp;
 }
