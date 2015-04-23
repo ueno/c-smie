@@ -19,6 +19,14 @@ libsmie_la_CFLAGS = $(DEPS_CFLAGS)
 libsmie_la_LIBADD = $(DEPS_LIBS)
 libsmie_la_LDFLAGS = -no-undefined -export-symbols-regex '^smie_'
 
+if ENABLE_GTKSOURCEVIEW
+lib_LTLIBRARIES += libsmiegtksourceview.la
+libsmiegtksourceview_la_SOURCES = smie-gtksourceview.h smie-gtksourceview.c
+libsmiegtksourceview_la_CFLAGS = $(DEPS_CFLAGS) $(GTKSOURCEVIEW_CFLAGS)
+libsmiegtksourceview_la_LIBADD = $(DEPS_LIBS) $(GTKSOURCEVIEW_LIBS)
+libsmiegtksourceview_la_LDFLAGS = -no-undefined -export-symbols-regex '^smie_'
+endif
+
 TESTS = test-grammar test-indenter
 
 check_LTLIBRARIES = libtest.la
