@@ -157,13 +157,8 @@ smie_gtk_source_buffer_advance_func (smie_advance_step_t step, gint count,
 {
   struct smie_gtk_source_buffer_context_t *context = user_data;
   smie_movement_function_t forward_func, backward_func;
-  GtkTextMark *mark;
   GtkTextIter iter;
   gboolean result;
-  mark = gtk_text_buffer_get_insert (GTK_TEXT_BUFFER (context->buffer));
-  gtk_text_buffer_get_iter_at_mark (GTK_TEXT_BUFFER (context->buffer),
-				    &context->iter,
-				    mark);
   switch (step)
     {
     case SMIE_ADVANCE_CHARACTERS:
@@ -192,13 +187,17 @@ smie_gtk_source_buffer_advance_func (smie_advance_step_t step, gint count,
 
   gtk_text_iter_assign (&iter, &context->iter);
   if (count > 0)
-    for (; count > 0; count--)
-      if (!forward_func (&iter, context->buffer))
-	break;
+    {
+      for (; count > 0; count--)
+	if (!forward_func (&iter, context->buffer))
+	  break;
+    }
   else
-    for (; count < 0; count++)
-      if (!backward_func (&iter, context->buffer))
-	break;
+    {
+      for (; count < 0; count++)
+	if (!backward_func (&iter, context->buffer))
+	  break;
+    }
   result = !gtk_text_iter_equal (&iter, &context->iter);
   gtk_text_iter_assign (&context->iter, &iter);
   return result;

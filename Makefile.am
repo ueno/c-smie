@@ -19,12 +19,23 @@ libsmie_la_CFLAGS = $(DEPS_CFLAGS)
 libsmie_la_LIBADD = $(DEPS_LIBS)
 libsmie_la_LDFLAGS = -no-undefined -export-symbols-regex '^smie_'
 
+EXTRA_DIST =
+
 if ENABLE_GTKSOURCEVIEW
 lib_LTLIBRARIES += libsmiegtksourceview.la
 libsmiegtksourceview_la_SOURCES = smie-gtksourceview.h smie-gtksourceview.c
 libsmiegtksourceview_la_CFLAGS = $(DEPS_CFLAGS) $(GTKSOURCEVIEW_CFLAGS)
-libsmiegtksourceview_la_LIBADD = $(DEPS_LIBS) $(GTKSOURCEVIEW_LIBS)
+libsmiegtksourceview_la_LIBADD = libsmie.la $(DEPS_LIBS) $(GTKSOURCEVIEW_LIBS)
 libsmiegtksourceview_la_LDFLAGS = -no-undefined -export-symbols-regex '^smie_'
+
+noinst_PROGRAMS = editor
+editor_SOURCES = editor.c editor-resources.c
+editor_CFLAGS = $(DEPS_CFLAGS) $(GTKSOURCEVIEW_CFLAGS)
+editor_LDADD = libsmiegtksourceview.la libsmie.la $(DEPS_LIBS) \
+	$(GTKSOURCEVIEW_LIBS)
+
+editor-resources.c: editor.gresource.xml editor.ui
+	$(AM_V_GEN) $(GLIB_COMPILE_RESOURCES) --target=$@ --sourcedir=$(srcdir) --generate-source $(srcdir)/editor.gresource.xml
 endif
 
 TESTS = test-grammar test-indenter
@@ -46,4 +57,4 @@ test_indenter_CFLAGS = \
 	-DINPUT_FILE=\"$(srcdir)/test.input\"
 test_indenter_LDADD = libtest.la libsmie.la $(DEPS_LIBS)
 
-EXTRA_DIST = test.grammar test.input
+EXTRA_DIST += test.grammar test.input

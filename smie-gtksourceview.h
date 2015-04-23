@@ -31,6 +31,8 @@ struct smie_gtk_source_buffer_context_t
   GtkTextIter iter;
 };
 
+smie_cursor_functions_t smie_gtk_source_buffer_cursor_functions;
+
 G_END_DECLS
 
 #endif	/* __SMIE_GTKSOURCEVIEW_H__ */
