@@ -62,6 +62,8 @@ struct smie_prec2_grammar_t
   GHashTable *prec2;
   GHashTable *first;
   GHashTable *last;
+  GHashTable *closer;
+  GHashTable *opener_closer;
 };
 
 enum smie_func_type_t
@@ -94,12 +96,14 @@ struct smie_prec_t
 
   gint right_prec;
   gboolean is_last;
+  gboolean is_closer;
 };
 
 struct smie_grammar_t
 {
   struct smie_symbol_pool_t *pool;
   GHashTable *precs;
+  GHashTable *opener_closer;
 };
 
 G_END_DECLS

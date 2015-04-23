@@ -75,10 +75,10 @@ gboolean smie_prec2_grammar_add_rule (smie_prec2_grammar_t *grammar,
 				      const smie_symbol_t *a,
 				      const smie_symbol_t *b,
 				      smie_prec2_type_t type);
-gboolean smie_prec2_grammar_add_opener (smie_prec2_grammar_t *grammar,
-					const gchar *token);
-gboolean smie_prec2_grammar_add_closer (smie_prec2_grammar_t *grammar,
-					const gchar *token);
+gboolean smie_prec2_grammar_add_pair (smie_prec2_grammar_t *grammar,
+				      const gchar *opener_token,
+				      const gchar *closer_token,
+				      gboolean is_last);
 
 smie_grammar_t *smie_grammar_alloc (smie_symbol_pool_t *pool);
 void smie_grammar_free (smie_grammar_t *grammar);
@@ -89,11 +89,17 @@ gboolean smie_grammar_add_rule (smie_grammar_t *grammar,
 				gint left_prec,
 				gboolean left_is_first,
 				gint right_prec,
-				gboolean right_is_last);
-gboolean smie_grammar_is_opener (smie_grammar_t *grammar,
-				 const gchar *token);
+				gboolean right_is_last,
+				gboolean right_is_closer);
+gboolean smie_grammar_is_first (smie_grammar_t *grammar,
+				const gchar *token);
+gboolean smie_grammar_is_last (smie_grammar_t *grammar,
+			       const gchar *token);
 gboolean smie_grammar_is_closer (smie_grammar_t *grammar,
 				 const gchar *token);
+gboolean smie_grammar_is_pair (smie_grammar_t *grammar,
+			       const gchar *opener_token,
+			       const gchar *closer_token);
 
 gboolean smie_bnf_to_prec2 (smie_bnf_grammar_t *bnf,
 			    smie_prec2_grammar_t *prec2,

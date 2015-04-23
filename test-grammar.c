@@ -144,8 +144,7 @@ populate_prec2_grammar (smie_symbol_pool_t *pool)
   ADD (TV ("N"), GT, T ("x"));
   ADD (TV ("N"), GT, T ("#"));
 
-  smie_prec2_grammar_add_opener (grammar, "(");
-  smie_prec2_grammar_add_closer (grammar, ")");
+  smie_prec2_grammar_add_pair (grammar, "(", ")", TRUE);
 
 #undef ADD
 #undef T
@@ -164,12 +163,12 @@ populate_grammar (smie_symbol_pool_t *pool)
 #define TV(x)							\
   smie_symbol_intern (pool, (x), SMIE_SYMBOL_TERMINAL_VARIABLE)
 
-  smie_grammar_add_rule (grammar, T ("#"), 1, FALSE, 1, FALSE);
-  smie_grammar_add_rule (grammar, T ("("), 0, TRUE, 56, FALSE);
-  smie_grammar_add_rule (grammar, T ("+"), 23, FALSE, 12, FALSE);
-  smie_grammar_add_rule (grammar, T ("x"), 45, FALSE, 34, FALSE);
-  smie_grammar_add_rule (grammar, T (")"), 57, FALSE, 0, TRUE);
-  smie_grammar_add_rule (grammar, TV ("N"), 58, FALSE, 59, FALSE);
+  smie_grammar_add_rule (grammar, T ("#"), 1, FALSE, 1, FALSE, FALSE);
+  smie_grammar_add_rule (grammar, T ("("), 0, TRUE, 56, FALSE, FALSE);
+  smie_grammar_add_rule (grammar, T ("+"), 23, FALSE, 12, FALSE, FALSE);
+  smie_grammar_add_rule (grammar, T ("x"), 45, FALSE, 34, FALSE, FALSE);
+  smie_grammar_add_rule (grammar, T (")"), 57, FALSE, 0, TRUE, TRUE);
+  smie_grammar_add_rule (grammar, TV ("N"), 58, FALSE, 59, FALSE, FALSE);
 
 #undef T
 #undef TV
