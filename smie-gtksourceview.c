@@ -66,7 +66,7 @@ static gboolean
 smie_gtk_source_buffer_backward_line (GtkTextIter *iter,
 				      GtkSourceBuffer *buffer)
 {
-  return gtk_text_iter_forward_line (iter);
+  return gtk_text_iter_backward_line (iter);
 }
 
 static gboolean
@@ -235,10 +235,12 @@ smie_gtk_source_buffer_read_token_func (gchar **token, gpointer user_data)
   while (!gtk_text_iter_is_start (&start_iter)
 	 && !g_unichar_isspace (gtk_text_iter_get_char (&start_iter)))
     gtk_text_iter_backward_char (&start_iter);
+  if (g_unichar_isspace (gtk_text_iter_get_char (&start_iter)))
+    gtk_text_iter_forward_char (&start_iter);
   gtk_text_iter_assign (&end_iter, &context->iter);
   while (!gtk_text_iter_is_end (&end_iter)
 	 && !g_unichar_isspace (gtk_text_iter_get_char (&end_iter)))
-    gtk_text_iter_backward_char (&end_iter);
+    gtk_text_iter_forward_char (&end_iter);
   if (token)
     *token = gtk_text_iter_get_slice (&start_iter, &end_iter);
   return TRUE;
