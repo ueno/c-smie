@@ -264,15 +264,18 @@ editor_application_window_key_press_event (GtkWidget *widget,
       /* Replace the current indent if it doesn't match the computed one.  */
       if (indent != current_indent)
 	{
-	  gchar *text = g_new0 (gchar, indent);
-	  memset (text, ' ', indent * sizeof (gchar));
 	  gtk_text_buffer_delete (GTK_TEXT_BUFFER (window->buffer),
 				  &start_iter, &end_iter);
-	  gtk_text_buffer_insert (GTK_TEXT_BUFFER (window->buffer),
-				  &start_iter,
-				  text,
-				  indent);
-	  g_free (text);
+	  if (indent > 0)
+	    {
+	      gchar *text = g_new0 (gchar, indent);
+	      memset (text, ' ', indent * sizeof (gchar));
+	      gtk_text_buffer_insert (GTK_TEXT_BUFFER (window->buffer),
+				      &start_iter,
+				      text,
+				      indent);
+	      g_free (text);
+	    }
 	}
       return TRUE;
     }
