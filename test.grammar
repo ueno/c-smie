@@ -6,3 +6,7 @@ cmd	: "case" exp "in" branches "esac"
 	| "for" exp "in" cmd "do" cmd "done"
 	| "for" exp "do" cmd "done"
 	;
+exp	: EXP
+	;
+branches: BRANCHES
+	;

@@ -521,12 +521,10 @@ smie_bnf_to_prec2 (struct smie_bnf_grammar_t *bnf,
 		      struct smie_symbol_t *b = l2->data;
 		      if (b->type == SMIE_SYMBOL_TERMINAL
 			  || b->type == SMIE_SYMBOL_TERMINAL_VARIABLE)
-			{
-			  struct smie_prec2_t *p
-			    = smie_prec2_alloc (a, b);
-			  gpointer v = GINT_TO_POINTER (SMIE_PREC2_EQ);
-			  g_hash_table_insert (prec2->prec2, p, v);
-			}
+			smie_prec2_grammar_add_rule (prec2,
+						     a,
+						     b,
+						     SMIE_PREC2_EQ);
 		      else if (b->type == SMIE_SYMBOL_NON_TERMINAL
 			       || b->type == SMIE_SYMBOL_TERMINAL_VARIABLE)
 			{
@@ -539,12 +537,10 @@ smie_bnf_to_prec2 (struct smie_bnf_grammar_t *bnf,
 			      struct smie_symbol_t *c = l3->data;
 			      if (c->type == SMIE_SYMBOL_TERMINAL
 				  || c->type == SMIE_SYMBOL_TERMINAL_VARIABLE)
-				{
-				  struct smie_prec2_t *p
-				    = smie_prec2_alloc (a, c);
-				  gpointer v = GINT_TO_POINTER (SMIE_PREC2_EQ);
-				  g_hash_table_insert (prec2->prec2, p, v);
-				}
+				smie_prec2_grammar_add_rule (prec2,
+							     a,
+							     c,
+							     SMIE_PREC2_EQ);
 			    }
 			  op_b = g_hash_table_lookup (first_op, b);
 			  if (!op_b)
@@ -553,10 +549,10 @@ smie_bnf_to_prec2 (struct smie_bnf_grammar_t *bnf,
 			  while (g_hash_table_iter_next (&iter_b, &key_b, NULL))
 			    {
 			      struct smie_symbol_t *d = key_b;
-			      struct smie_prec2_t *p
-				= smie_prec2_alloc (a, d);
-			      gpointer v = GINT_TO_POINTER (SMIE_PREC2_LT);
-			      g_hash_table_insert (prec2->prec2, p, v);
+			      smie_prec2_grammar_add_rule (prec2,
+							   a,
+							   d,
+							   SMIE_PREC2_LT);
 			    }
 			}
 		    }
@@ -580,10 +576,10 @@ smie_bnf_to_prec2 (struct smie_bnf_grammar_t *bnf,
 			  while (g_hash_table_iter_next (&iter_a, &key_a, NULL))
 			    {
 			      struct smie_symbol_t *e = key_a;
-			      struct smie_prec2_t *p
-				= smie_prec2_alloc (e, b);
-			      gpointer v = GINT_TO_POINTER (SMIE_PREC2_GT);
-			      g_hash_table_insert (prec2->prec2, p, v);
+			      smie_prec2_grammar_add_rule (prec2,
+							   e,
+							   b,
+							   SMIE_PREC2_GT);
 			    }
 			}
 		    }
@@ -628,13 +624,26 @@ smie_func_hash (gconstpointer key)
     {
     case SMIE_FUNC_F:
     case SMIE_FUNC_G:
-      hash ^= smie_symbol_hash (func->u.symbol);
-      break;
-    case SMIE_FUNC_COMPOSED:
-      hash ^= smie_func2_hash (&func->u.composed);
+      hash ^= smie_symbol_hash (func->symbol);
       break;
     }
   return hash;
+}
+
+static gboolean
+smie_func_equal (gconstpointer a, gconstpointer b)
+{
+  const struct smie_func_t *fa = a;
+  const struct smie_func_t *fb = b;
+  if (fa->type != fb->type)
+    return FALSE;
+  switch (fa->type)
+    {
+    case SMIE_FUNC_F:
+    case SMIE_FUNC_G:
+      return smie_symbol_equal (fa->symbol, fb->symbol);
+    }
+  return FALSE;
 }
 
 #ifdef DEBUG
@@ -644,18 +653,9 @@ smie_debug_func_name (const struct smie_func_t *func)
   switch (func->type)
     {
     case SMIE_FUNC_F:
-      return g_strdup_printf ("f_%s", func->u.symbol->name);
+      return g_strdup_printf ("f_%s", func->symbol->name);
     case SMIE_FUNC_G:
-      return g_strdup_printf ("g_%s", func->u.symbol->name);
-    case SMIE_FUNC_COMPOSED:
-      {
-	gchar *f_name = smie_debug_func_name (func->u.composed.f);
-	gchar *g_name = smie_debug_func_name (func->u.composed.g);
-	gchar *composed_name = g_strdup_printf ("%s,%s", f_name, g_name);
-	g_free (f_name);
-	g_free (g_name);
-	return composed_name;
-      }
+      return g_strdup_printf ("g_%s", func->symbol->name);
     }
 }
 
@@ -709,25 +709,6 @@ smie_debug_dump_grammar (struct smie_grammar_t *grammar)
 }
 #endif
 
-static gboolean
-smie_func_equal (gconstpointer a, gconstpointer b)
-{
-  const struct smie_func_t *fa = a;
-  const struct smie_func_t *fb = b;
-  if (fa->type != fb->type)
-    return FALSE;
-  switch (fa->type)
-    {
-    case SMIE_FUNC_F:
-    case SMIE_FUNC_G:
-      return smie_symbol_equal (fa->u.symbol, fb->u.symbol);
-    case SMIE_FUNC_COMPOSED:
-      return smie_func_equal (fa->u.composed.f, fb->u.composed.f)
-	&& smie_func_equal (fa->u.composed.g, fb->u.composed.g);
-    }
-  return FALSE;
-}
-
 static struct smie_func2_t *
 smie_func2_alloc (const struct smie_func_t *f, const struct smie_func_t *g)
 {
@@ -760,13 +741,18 @@ smie_prec2_to_precs (struct smie_prec2_grammar_t *prec2,
   GHashTable *allocated = g_hash_table_new_full (smie_func_hash,
 						 smie_func_equal,
 						 g_free,
-						 NULL);
-  GHashTable *unassigned = g_hash_table_new_full (smie_func2_hash,
+						 g_free);
+  GHashTable *inequalities = g_hash_table_new_full (smie_func2_hash,
+						    smie_func2_equal,
+						    g_free,
+						    NULL);
+  GHashTable *equalities = g_hash_table_new_full (smie_func2_hash,
 						  smie_func2_equal,
 						  g_free,
 						  NULL);
-  GHashTable *composed = g_hash_table_new (smie_func_hash, smie_func_equal);
-  GHashTable *assigned = g_hash_table_new (smie_func_hash, smie_func_equal);
+  GHashTable *transitive = g_hash_table_new (smie_func_hash,
+					     smie_func_equal);
+  GHashTable *assigned = g_hash_table_new (g_direct_hash, g_direct_equal);
   gint iteration_count;
   GHashTableIter iter;
   gpointer key, value;
@@ -782,13 +768,13 @@ smie_prec2_to_precs (struct smie_prec2_grammar_t *prec2,
 	{
 	  struct smie_func_t *func;
 	  func = g_new0 (struct smie_func_t, 1);
-	  func->u.symbol = key;
+	  func->symbol = key;
 	  func->type = SMIE_FUNC_F;
-	  g_hash_table_add (allocated, func);
+	  g_hash_table_insert (allocated, func, g_new0 (struct smie_prec_t, 1));
 	  func = g_new0 (struct smie_func_t, 1);
-	  func->u.symbol = key;
+	  func->symbol = key;
 	  func->type = SMIE_FUNC_G;
-	  g_hash_table_add (allocated, func);
+	  g_hash_table_insert (allocated, func, g_new0 (struct smie_prec_t, 1));
 	}
     }
 
@@ -797,16 +783,16 @@ smie_prec2_to_precs (struct smie_prec2_grammar_t *prec2,
     {
       struct smie_prec2_t *p2 = key;
       enum smie_prec2_type_t p2_type = GPOINTER_TO_INT (value);
-      struct smie_func_t func, *f, *g, *fg;
+      struct smie_func_t func, *f, *g;
 
-      func.u.symbol = p2->left;
+      func.symbol = p2->left;
       func.type = SMIE_FUNC_F;
       g_hash_table_lookup_extended (allocated,
 				    &func,
 				    (gpointer *) &f,
 				    NULL);
 
-      func.u.symbol = p2->right;
+      func.symbol = p2->right;
       func.type = SMIE_FUNC_G;
       g_hash_table_lookup_extended (allocated,
 				    &func,
@@ -816,51 +802,70 @@ smie_prec2_to_precs (struct smie_prec2_grammar_t *prec2,
       switch (p2_type)
 	{
 	case SMIE_PREC2_LT:
-	  g_hash_table_add (unassigned, smie_func2_alloc (f, g));
+	  g_hash_table_add (inequalities, smie_func2_alloc (f, g));
 	  break;
 	case SMIE_PREC2_GT:
-	  g_hash_table_add (unassigned, smie_func2_alloc (g, f));
+	  g_hash_table_add (inequalities, smie_func2_alloc (g, f));
 	  break;
 	case SMIE_PREC2_EQ:
-	  func.u.composed.f = f;
-	  func.u.composed.g = g;
-	  func.type = SMIE_FUNC_COMPOSED;
-	  if (!g_hash_table_lookup_extended (allocated,
-					     &func,
-					     (gpointer *) &fg,
-					     NULL))
-	    {
-	      fg = g_memdup (&func, sizeof (struct smie_func_t));
-	      g_hash_table_add (allocated, fg);
-	    }
-	  g_hash_table_insert (composed, f, fg);
-	  g_hash_table_insert (composed, g, fg);
+	  g_hash_table_add (equalities, smie_func2_alloc (f, g));
 	  break;
 	}
     }
 
   /* Replace all occurrences of composed functions.  */
-  g_hash_table_iter_init (&iter, unassigned);
+  g_hash_table_iter_init (&iter, equalities);
   while (g_hash_table_iter_next (&iter, &key, NULL))
     {
       struct smie_func2_t *f2 = key;
-      struct smie_func_t *fg;
-      fg = g_hash_table_lookup (composed, f2->f);
-      if (fg)
-	f2->f = fg;
+      GHashTableIter iter2;
+      gpointer key2;
 
-      fg = g_hash_table_lookup (composed, f2->g);
-      if (fg)
-	f2->g = fg;
+      if (f2->f == f2->g)
+	continue;
+
+      g_hash_table_iter_init (&iter2, equalities);
+      while (g_hash_table_iter_next (&iter2, &key2, NULL))
+	{
+	  struct smie_func2_t *other_f2 = key2;
+
+	  if (other_f2 == f2)
+	    continue;
+
+	  if (f2->f == other_f2->g)
+	    {
+	      g_hash_table_insert (transitive,
+				   (gpointer) other_f2->g,
+				   (gpointer) f2->g);
+	      other_f2->g = f2->g;
+	    }
+	  if (f2->f == other_f2->f)
+	    {
+	      g_hash_table_insert (transitive,
+				   (gpointer) other_f2->f,
+				   (gpointer) f2->g);
+	      other_f2->f = f2->g;
+	    }
+	}
+
+      g_hash_table_iter_init (&iter2, inequalities);
+      while (g_hash_table_iter_next (&iter2, &key2, NULL))
+	{
+	  struct smie_func2_t *other_f2 = key2;
+	  if (f2->f == other_f2->g)
+	    other_f2->g = f2->g;
+	  if (f2->f == other_f2->f)
+	    other_f2->f = f2->g;
+	}
     }
 
-  /* Loop until unassigned is empty.  */
+  /* Loop until inequalities is empty.  */
   iteration_count = 0;
-  while (g_hash_table_size (unassigned) > 0)
+  while (g_hash_table_size (inequalities) > 0)
     {
       GList *to_remove = NULL, *l;
 
-      g_hash_table_iter_init (&iter, unassigned);
+      g_hash_table_iter_init (&iter, inequalities);
       while (g_hash_table_iter_next (&iter, &key, NULL))
 	{
 	  struct smie_func2_t *funcs = key;
@@ -868,11 +873,11 @@ smie_prec2_to_precs (struct smie_prec2_grammar_t *prec2,
 	  gpointer key2;
 	  gboolean found = FALSE;
 
-	  g_hash_table_iter_init (&iter2, unassigned);
+	  g_hash_table_iter_init (&iter2, inequalities);
 	  while (g_hash_table_iter_next (&iter2, &key2, NULL))
 	    {
 	      struct smie_func2_t *funcs2 = key2;
-	      if (smie_func_equal (funcs->f, funcs2->g))
+	      if (funcs->f == funcs2->g)
 		{
 		  found = TRUE;
 		  break;
@@ -886,8 +891,8 @@ smie_prec2_to_precs (struct smie_prec2_grammar_t *prec2,
 	{
 	  g_set_error (error, SMIE_ERROR, SMIE_ERROR_GRAMMAR,
 		       "cycle found in prec2 grammar");
-	  g_hash_table_unref (composed);
-	  g_hash_table_unref (unassigned);
+	  g_hash_table_unref (equalities);
+	  g_hash_table_unref (inequalities);
 	  result = FALSE;
 	  goto out;
 	}
@@ -897,51 +902,54 @@ smie_prec2_to_precs (struct smie_prec2_grammar_t *prec2,
 	  struct smie_func_t *func = l->data;
 	  if (!g_hash_table_contains (assigned, func))
 	    {
-	      g_hash_table_insert (assigned,
-				   func,
+	      g_hash_table_insert (assigned, func,
 				   GINT_TO_POINTER (iteration_count));
 	      iteration_count++;
 	    }
-	  g_hash_table_iter_init (&iter, unassigned);
+	  g_hash_table_iter_init (&iter, inequalities);
 	  while (g_hash_table_iter_next (&iter, &key, NULL))
 	    {
 	      struct smie_func2_t *funcs = key;
-	      if (smie_func_equal (funcs->f, func))
+	      if (funcs->f == func)
 		g_hash_table_iter_remove (&iter);
 	    }
 	}
       g_list_free (to_remove);
       iteration_count += 10;
     }
-  g_hash_table_unref (unassigned);
+  g_hash_table_unref (inequalities);
 
-  /* Decompose functions in assigned.  */
-  g_hash_table_remove_all (composed);
-  g_hash_table_iter_init (&iter, assigned);
+  /* Propagate equality constraints back to their sources.  */
+  g_hash_table_iter_init (&iter, equalities);
+  while (g_hash_table_iter_next (&iter, &key, NULL))
+    {
+      struct smie_func2_t *funcs = key;
+      if (g_hash_table_lookup_extended (assigned, funcs->f,
+					NULL, &value))
+	g_hash_table_insert (assigned, (gpointer) funcs->g, value);
+      else if (g_hash_table_lookup_extended (assigned, funcs->g,
+					     NULL, &value))
+	g_hash_table_insert (assigned, (gpointer) funcs->f, value);
+    }
+  g_hash_table_iter_init (&iter, transitive);
   while (g_hash_table_iter_next (&iter, &key, &value))
     {
-      struct smie_func_t *func = key;
-      if (func->type == SMIE_FUNC_COMPOSED)
+      gpointer value1;
+      if (!g_hash_table_contains (assigned, key)
+	  && g_hash_table_lookup_extended (assigned, value, NULL, &value1))
 	{
-	  g_hash_table_insert (composed, (gpointer) func->u.composed.f, value);
-	  g_hash_table_insert (composed, (gpointer) func->u.composed.g, value);
-	  g_hash_table_iter_remove (&iter);
+	  g_hash_table_insert (assigned, key, value1);
 	}
     }
-  g_hash_table_iter_init (&iter, composed);
-  while (g_hash_table_iter_next (&iter, &key, &value))
-    g_hash_table_insert (assigned, key, value);
-  g_hash_table_unref (composed);
+  g_hash_table_unref (transitive);
 
-  /* Add still unassigned functions.  */
+  /* Fill in the remaining functions.  */
   g_hash_table_iter_init (&iter, allocated);
   while (g_hash_table_iter_next (&iter, &key, NULL))
     {
-      struct smie_func_t *func = key;
-      if (func->type != SMIE_FUNC_COMPOSED
-	  && !g_hash_table_contains (assigned, func))
+      if (!g_hash_table_contains (assigned, key))
 	g_hash_table_insert (assigned,
-			     func,
+			     key,
 			     GINT_TO_POINTER (iteration_count++));
     }
 
@@ -950,20 +958,20 @@ smie_prec2_to_precs (struct smie_prec2_grammar_t *prec2,
     {
       struct smie_func_t *func = key;
       struct smie_prec_t *prec
-	= g_hash_table_lookup (precs->precs, (gpointer) func->u.symbol);
+	= g_hash_table_lookup (precs->precs, (gpointer) func->symbol);
       if (!prec)
 	{
 	  prec = g_new0 (struct smie_prec_t, 1);
 	  prec->is_first
 	    = g_hash_table_contains (prec2->first,
-				     (gpointer) func->u.symbol);
+				     (gpointer) func->symbol);
 	  prec->is_last
 	    = g_hash_table_contains (prec2->last,
-				     (gpointer) func->u.symbol);
+				     (gpointer) func->symbol);
 	  prec->is_closer
 	    = g_hash_table_contains (prec2->closer,
-				     (gpointer) func->u.symbol);
-	  g_hash_table_insert (precs->precs, (gpointer) func->u.symbol, prec);
+				     (gpointer) func->symbol);
+	  g_hash_table_insert (precs->precs, (gpointer) func->symbol, prec);
 	}
       switch (func->type)
 	{
@@ -973,8 +981,6 @@ smie_prec2_to_precs (struct smie_prec2_grammar_t *prec2,
 	case SMIE_FUNC_G:
 	  prec->right_prec = GPOINTER_TO_INT (value);
 	  break;
-	default:
-	  g_assert_not_reached ();
 	}
     }
   precs->opener_closer = g_hash_table_ref (prec2->opener_closer);

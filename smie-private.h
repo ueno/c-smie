@@ -69,8 +69,7 @@ struct smie_prec2_grammar_t
 enum smie_func_type_t
   {
     SMIE_FUNC_F,
-    SMIE_FUNC_G,
-    SMIE_FUNC_COMPOSED
+    SMIE_FUNC_G
   };
 
 struct smie_func2_t
@@ -81,11 +80,7 @@ struct smie_func2_t
 
 struct smie_func_t
 {
-  union
-  {
-    const struct smie_symbol_t *symbol;
-    struct smie_func2_t composed;
-  } u;
+  const struct smie_symbol_t *symbol;
   enum smie_func_type_t type;
 };
 

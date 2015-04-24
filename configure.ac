@@ -8,7 +8,7 @@ AC_PROG_YACC
 
 LT_INIT
 
-PKG_CHECK_MODULES([DEPS], [glib-2.0 >= 2.44])
+PKG_CHECK_MODULES([DEPS], [glib-2.0 >= 2.32])
 
 AC_ARG_ENABLE([gtksourceview],
   [AS_HELP_STRING([--disable-gtksourceview],
@@ -16,8 +16,10 @@ AC_ARG_ENABLE([gtksourceview],
   [enable_gtksourceview="$enableval"],
   [enable_gtksourceview=auto])
 
+dnl "editor" example uses G_DECLARE_FINAL_TYPE, which was added in GLib 2.44
 if test "$enable_gtksourceview" != no; then
-  PKG_CHECK_MODULES([GTKSOURCEVIEW], [gtksourceview-3.0 gtk+-3.0 >= 3.10],
+  PKG_CHECK_MODULES([GTKSOURCEVIEW],
+    [gtksourceview-3.0 gtk+-3.0 >= 3.10 gobject-2.0 >= 2.44],
     have_gtksourceview=yes, have_gtksourceview=no)
   AC_PATH_PROG(GLIB_COMPILE_RESOURCES, glib-compile-resources)
 fi
