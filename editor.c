@@ -23,6 +23,7 @@
 #include <glib/gprintf.h>
 #include <gtksourceview/gtksource.h>
 #include <smie-gtksourceview.h>
+#include <string.h>
 
 struct _EditorApplication
 {
@@ -233,16 +234,46 @@ editor_application_window_key_press_event (GtkWidget *widget,
     {
       GtkTextMark *mark;
       smie_gtk_source_buffer_context_t context;
-      gint column;
+      gint indent, current_indent;
+      GtkTextIter iter, start_iter, end_iter;
 
       context.buffer = window->buffer;
       mark = gtk_text_buffer_get_insert (GTK_TEXT_BUFFER (window->buffer));
       gtk_text_buffer_get_iter_at_mark (GTK_TEXT_BUFFER (window->buffer),
-					&context.iter,
+					&iter,
 					mark);
+      gtk_text_iter_assign (&context.iter, &iter);
+      indent = smie_indenter_calculate (window->indenter, &context);
+      g_printf ("%d\n", indent);
 
-      column = smie_indenter_calculate (window->indenter, &context);
-      g_printf ("%d\n", column);
+      /* Point START_ITER to the beginning of the line.  */
+      gtk_text_iter_assign (&start_iter, &iter);
+      while (!gtk_text_iter_is_start (&start_iter)
+	     && !gtk_text_iter_starts_line (&start_iter)
+	     && gtk_text_iter_backward_char (&start_iter))
+	;
+
+      /* Point END_ITER to the end of the indent and count the offset.  */
+      gtk_text_iter_assign (&end_iter, &start_iter);
+      current_indent = 0;
+      while (!gtk_text_iter_is_end (&end_iter)
+	     && g_unichar_isspace (gtk_text_iter_get_char (&end_iter))
+	     && gtk_text_iter_forward_char (&end_iter))
+	current_indent++;
+
+      /* Replace the current indent if it doesn't match the computed one.  */
+      if (indent != current_indent)
+	{
+	  gchar *text = g_new0 (gchar, indent);
+	  memset (text, ' ', indent * sizeof (gchar));
+	  gtk_text_buffer_delete (GTK_TEXT_BUFFER (window->buffer),
+				  &start_iter, &end_iter);
+	  gtk_text_buffer_insert (GTK_TEXT_BUFFER (window->buffer),
+				  &start_iter,
+				  text,
+				  indent);
+	  g_free (text);
+	}
       return TRUE;
     }
   return GTK_WIDGET_CLASS (editor_application_window_parent_class)->key_press_event (widget, event);

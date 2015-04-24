@@ -76,7 +76,8 @@ smie_gtk_source_buffer_forward_token (GtkTextIter *iter,
   /* If the cursor is on a comment or a whitespace, skip them and
      return.  */
   if (gtk_source_buffer_iter_has_context_class (buffer, iter, "comment")
-      || g_unichar_isspace (gtk_text_iter_get_char (iter)))
+      || g_unichar_isspace (gtk_text_iter_get_char (iter))
+      || gtk_text_iter_is_start (iter))
     while ((gtk_source_buffer_iter_has_context_class (buffer, iter, "comment")
 	    || g_unichar_isspace (gtk_text_iter_get_char (iter)))
 	   && gtk_text_iter_forward_char (iter))
@@ -116,7 +117,8 @@ smie_gtk_source_buffer_backward_token (GtkTextIter *iter,
   /* If the cursor is on a comment or a whitespace, skip them and
      return.  */
   if (gtk_source_buffer_iter_has_context_class (buffer, iter, "comment")
-      || g_unichar_isspace (gtk_text_iter_get_char (iter)))
+      || g_unichar_isspace (gtk_text_iter_get_char (iter))
+      || gtk_text_iter_is_end (iter))
     while ((gtk_source_buffer_iter_has_context_class (buffer, iter, "comment")
 	    || g_unichar_isspace (gtk_text_iter_get_char (iter)))
 	   && gtk_text_iter_backward_char (iter))
