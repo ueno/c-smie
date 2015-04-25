@@ -1092,7 +1092,7 @@ smie_next_sexp (struct smie_grammar_t *grammar,
   GList *stack = NULL;
 
   /* Place the cursor on the token.  */
-  if (!read_token_func (context, NULL) && !next_token_func (context))
+  if (!read_token_func (context, NULL) && !next_token_func (context, TRUE))
     return FALSE;
 
   do
@@ -1145,7 +1145,7 @@ smie_next_sexp (struct smie_grammar_t *grammar,
 	    }
 	}
     }
-  while (next_token_func (context));
+  while (next_token_func (context, TRUE));
 
  out:
   g_list_free (stack);

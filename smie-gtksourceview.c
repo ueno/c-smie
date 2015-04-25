@@ -75,7 +75,7 @@ smie_gtk_source_buffer_backward_line (gpointer data)
 }
 
 static gboolean
-smie_gtk_source_buffer_forward_token (gpointer data)
+smie_gtk_source_buffer_forward_token (gpointer data, gboolean move_lines)
 {
   struct smie_gtk_source_buffer_context_t *context = data;
 
@@ -96,6 +96,7 @@ smie_gtk_source_buffer_forward_token (gpointer data)
 							&context->iter,
 							"comment")
 	      || g_unichar_isspace (gtk_text_iter_get_char (&context->iter)))
+	     && (move_lines || !gtk_text_iter_ends_line (&context->iter))
 	     && gtk_text_iter_forward_char (&context->iter))
 	;
       return !gtk_text_iter_equal (&context->iter, &start_iter);
@@ -109,12 +110,14 @@ smie_gtk_source_buffer_forward_token (gpointer data)
       while (gtk_source_buffer_iter_has_context_class (context->buffer,
 						       &context->iter,
 						       "string")
+	     && (move_lines || !gtk_text_iter_ends_line (&context->iter))
 	     && gtk_text_iter_forward_char (&context->iter))
 	;
       while ((gtk_source_buffer_iter_has_context_class (context->buffer,
 							&context->iter,
 							"comment")
 	      || g_unichar_isspace (gtk_text_iter_get_char (&context->iter)))
+	     && (move_lines || !gtk_text_iter_ends_line (&context->iter))
 	     && gtk_text_iter_forward_char (&context->iter))
 	;
     }
@@ -129,12 +132,14 @@ smie_gtk_source_buffer_forward_token (gpointer data)
 							    &context->iter,
 							    "string")
 	       || g_unichar_isspace (gtk_text_iter_get_char (&context->iter)))
+	     && (move_lines || !gtk_text_iter_ends_line (&context->iter))
 	     && gtk_text_iter_forward_char (&context->iter))
 	;
       while ((gtk_source_buffer_iter_has_context_class (context->buffer,
 							&context->iter,
 							"comment")
 	      || g_unichar_isspace (gtk_text_iter_get_char (&context->iter)))
+	     && (move_lines || !gtk_text_iter_ends_line (&context->iter))
 	     && gtk_text_iter_forward_char (&context->iter))
 	;
     }
@@ -143,7 +148,7 @@ smie_gtk_source_buffer_forward_token (gpointer data)
 }
 
 static gboolean
-smie_gtk_source_buffer_backward_token (gpointer data)
+smie_gtk_source_buffer_backward_token (gpointer data, gboolean move_lines)
 {
   struct smie_gtk_source_buffer_context_t *context = data;
 
@@ -158,8 +163,8 @@ smie_gtk_source_buffer_backward_token (gpointer data)
   if (gtk_source_buffer_iter_has_context_class (context->buffer,
 						&context->iter,
 						"comment")
-	   || g_unichar_isspace (gtk_text_iter_get_char (&context->iter))
-	   || gtk_text_iter_is_end (&context->iter))
+      || g_unichar_isspace (gtk_text_iter_get_char (&context->iter))
+      || gtk_text_iter_is_end (&context->iter))
     {
       GtkTextIter end_iter;
       gtk_text_iter_assign (&end_iter, &context->iter);
@@ -168,6 +173,7 @@ smie_gtk_source_buffer_backward_token (gpointer data)
 							"comment")
 	      || g_unichar_isspace (gtk_text_iter_get_char (&context->iter))
 	      || gtk_text_iter_is_end (&context->iter))
+	     && (move_lines || !gtk_text_iter_starts_line (&context->iter))
 	     && gtk_text_iter_backward_char (&context->iter))
 	;
       return !gtk_text_iter_equal (&context->iter, &end_iter);
@@ -181,12 +187,14 @@ smie_gtk_source_buffer_backward_token (gpointer data)
       while (gtk_source_buffer_iter_has_context_class (context->buffer,
 						       &context->iter,
 						       "string")
+	     && (move_lines || !gtk_text_iter_starts_line (&context->iter))
 	     && gtk_text_iter_backward_char (&context->iter))
 	;
       while ((gtk_source_buffer_iter_has_context_class (context->buffer,
 							&context->iter,
 							"comment")
 	      || g_unichar_isspace (gtk_text_iter_get_char (&context->iter)))
+	     && (move_lines || !gtk_text_iter_starts_line (&context->iter))
 	     && gtk_text_iter_backward_char (&context->iter))
 	;
     }
@@ -201,12 +209,14 @@ smie_gtk_source_buffer_backward_token (gpointer data)
 	       || gtk_source_buffer_iter_has_context_class (context->buffer,
 							    &context->iter,
 							    "string"))
+	     && (move_lines || !gtk_text_iter_starts_line (&context->iter))
 	     && gtk_text_iter_backward_char (&context->iter))
 	;
       while ((gtk_source_buffer_iter_has_context_class (context->buffer,
 							&context->iter,
 							"comment")
 	      || g_unichar_isspace (gtk_text_iter_get_char (&context->iter)))
+	     && (move_lines || !gtk_text_iter_starts_line (&context->iter))
 	     && gtk_text_iter_backward_char (&context->iter))
 	;
     }

@@ -106,8 +106,8 @@ smie_indenter_calculate (struct smie_indenter_t *indenter,
   if (result)
     return 0;
 
-  indenter->functions->forward_to_line_end (context);
-  indenter->functions->backward_token (context);
+  indenter->functions->backward_to_line_start (context);
+  indenter->functions->forward_token (context, FALSE);
 
   if (!indenter->functions->read_token (context, &token))
     return 0;

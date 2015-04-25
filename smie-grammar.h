@@ -108,7 +108,7 @@ gboolean smie_prec2_to_precs (smie_prec2_grammar_t *prec2,
 			      smie_grammar_t *precs,
 			      GError **error);
 
-typedef gboolean (*smie_next_token_function_t) (gpointer);
+typedef gboolean (*smie_next_token_function_t) (gpointer, gboolean);
 typedef gboolean (*smie_read_token_function_t) (gpointer, gchar **);
 
 gboolean smie_forward_sexp (smie_grammar_t *grammar,
