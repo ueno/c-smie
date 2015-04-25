@@ -115,28 +115,38 @@ smie_indenter_calculate (struct smie_indenter_t *indenter,
   if (!indenter->functions->read_token (context, &token))
     return 0;
 
-  indenter->functions->push_context (context);
   result = smie_grammar_is_closer (indenter->grammar, token);
   g_free (token);
   if (result)
     {
+      indenter->functions->push_context (context);
       if (smie_backward_sexp (indenter->grammar,
 			      indenter->functions->backward_token,
 			      indenter->functions->read_token,
 			      context))
-	return smie_indenter_calculate_bol_column (indenter, context);
+	{
+	  gint indent = smie_indenter_calculate_bol_column (indenter, context);
+	  indenter->functions->pop_context (context);
+	  return indent;
+	}
 
       /* Even if there is no matching opener, if the cursor moved to
 	 an opener, align to it.  I.e. IF ... THEN ... ELSE  */
-      if (indenter->functions->read_token (context, &token))
+      result = indenter->functions->read_token (context, &token);
+      if (result)
 	{
 	  result = smie_grammar_is_first (indenter->grammar, token);
 	  g_free (token);
 	  if (result)
-	    return smie_indenter_calculate_bol_column (indenter, context);
+	    {
+	      gint indent = smie_indenter_calculate_bol_column (indenter,
+								context);
+	      indenter->functions->pop_context (context);
+	      return indent;
+	    }
 	}
+      indenter->functions->pop_context (context);
     }
-  indenter->functions->pop_context (context);
 
   /* If the previous line starts with a last closer, align to it.  */
   indenter->functions->backward_line (context);
