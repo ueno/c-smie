@@ -99,6 +99,7 @@ smie_indenter_calculate (struct smie_indenter_t *indenter,
   gchar *token;
   gboolean result;
 
+  /* If the cursor is on the first line, return 0.  */
   indenter->functions->push_context (context);
   indenter->functions->backward_to_line_start (context);
   result = indenter->functions->is_start (context);
@@ -106,12 +107,15 @@ smie_indenter_calculate (struct smie_indenter_t *indenter,
   if (result)
     return 0;
 
+  /* If the line starts with a closer, move backward to the the
+     matching opener and use the indentation.  */
   indenter->functions->backward_to_line_start (context);
-  indenter->functions->forward_token (context, FALSE);
-
+  if (!indenter->functions->read_token (context, NULL))
+    indenter->functions->forward_token (context, FALSE);
   if (!indenter->functions->read_token (context, &token))
     return 0;
 
+  indenter->functions->push_context (context);
   result = smie_grammar_is_closer (indenter->grammar, token);
   g_free (token);
   if (result)
@@ -121,9 +125,33 @@ smie_indenter_calculate (struct smie_indenter_t *indenter,
 			      indenter->functions->read_token,
 			      context))
 	return smie_indenter_calculate_bol_column (indenter, context);
+
+      /* Even if there is no matching opener, if the cursor moved to
+	 an opener, align to it.  I.e. IF ... THEN ... ELSE  */
+      if (indenter->functions->read_token (context, &token))
+	{
+	  result = smie_grammar_is_first (indenter->grammar, token);
+	  g_free (token);
+	  if (result)
+	    return smie_indenter_calculate_bol_column (indenter, context);
+	}
+    }
+  indenter->functions->pop_context (context);
+
+  /* If the previous line starts with a last closer, align to it.  */
+  indenter->functions->backward_line (context);
+  indenter->functions->backward_to_line_start (context);
+  if (!indenter->functions->read_token (context, NULL))
+    indenter->functions->forward_token (context, FALSE);
+  if (indenter->functions->read_token (context, &token))
+    {
+      result = smie_grammar_is_last (indenter->grammar, token);
+      g_free (token);
+      if (result)
+	return smie_indenter_calculate_bol_column (indenter, context);
     }
 
-  indenter->functions->backward_line (context);
+  /* Otherwise increment the indentation by indenter->step.  */
   return indenter->step
     + smie_indenter_calculate_bol_column (indenter, context);
 }
