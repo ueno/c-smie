@@ -29,6 +29,7 @@ struct smie_gtk_source_buffer_context_t
 {
   GtkSourceBuffer *buffer;
   GtkTextIter iter;
+  GtkTextIter saved_iter;
 };
 
 smie_cursor_functions_t smie_gtk_source_buffer_cursor_functions;

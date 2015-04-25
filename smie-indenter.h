@@ -29,10 +29,22 @@ typedef gunichar (*smie_read_char_function_t) (gpointer);
 typedef struct smie_cursor_functions_t smie_cursor_functions_t;
 struct smie_cursor_functions_t
 {
-  smie_advance_function_t advance;
-  smie_inspect_function_t inspect;
-  smie_read_token_function_t read_token;
-  smie_read_char_function_t read_char;
+  gboolean (* forward_char) (gpointer);
+  gboolean (* backward_char) (gpointer);
+  gboolean (* forward_line) (gpointer);
+  gboolean (* backward_line) (gpointer);
+  gboolean (* forward_to_line_end) (gpointer);
+  gboolean (* backward_to_line_start) (gpointer);
+  gboolean (* forward_token) (gpointer);
+  gboolean (* backward_token) (gpointer);
+  gboolean (* is_start) (gpointer);
+  gboolean (* is_end) (gpointer);
+  gboolean (* starts_line) (gpointer);
+  gboolean (* ends_line) (gpointer);
+  gboolean (* read_token) (gpointer, gchar **);
+  gunichar (* read_char) (gpointer);
+  void (* push_context) (gpointer);
+  void (* pop_context) (gpointer);
 };
 
 smie_indenter_t *smie_indenter_new (smie_grammar_t *grammar,

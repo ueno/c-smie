@@ -1081,27 +1081,18 @@ smie_select_right (struct smie_prec_t *prec, gint *precp)
   return prec->is_last;
 }
 
-enum smie_direction_t
-  {
-    SMIE_DIRECTION_FORWARD,
-    SMIE_DIRECTION_BACKWARD
-  };
-
 static gboolean
-smie_advance_sexp (struct smie_grammar_t *grammar,
-		   enum smie_direction_t direction,
-		   gint count,
-		   smie_advance_function_t advance_func,
-		   smie_read_token_function_t read_func,
-		   gpointer context,
-		   smie_select_function_t op_forward,
-		   smie_select_function_t op_backward)
+smie_next_sexp (struct smie_grammar_t *grammar,
+		smie_next_token_function_t next_token_func,
+		smie_read_token_function_t read_token_func,
+		gpointer context,
+		smie_select_function_t op_forward,
+		smie_select_function_t op_backward)
 {
   GList *stack = NULL;
 
   /* Place the cursor on the token.  */
-  if (!read_func (NULL, context)
-      && !advance_func (SMIE_ADVANCE_TOKENS, count, context))
+  if (!read_token_func (context, NULL) && !next_token_func (context))
     return FALSE;
 
   do
@@ -1111,7 +1102,7 @@ smie_advance_sexp (struct smie_grammar_t *grammar,
       gint prec_value;
       gchar *token;
 
-      if (!read_func (&token, context))
+      if (!read_token_func (context, &token))
 	goto out;
 
       symbol.name = token;
@@ -1154,7 +1145,7 @@ smie_advance_sexp (struct smie_grammar_t *grammar,
 	    }
 	}
     }
-  while (advance_func (SMIE_ADVANCE_TOKENS, count, context));
+  while (next_token_func (context));
 
  out:
   g_list_free (stack);
@@ -1163,34 +1154,30 @@ smie_advance_sexp (struct smie_grammar_t *grammar,
 
 gboolean
 smie_forward_sexp (struct smie_grammar_t *grammar,
-		   smie_advance_function_t advance_func,
-		   smie_read_token_function_t read_func,
+		   smie_next_token_function_t next_token_func,
+		   smie_read_token_function_t read_token_func,
 		   gpointer context)
 {
-  return smie_advance_sexp (grammar,
-			    SMIE_DIRECTION_FORWARD,
-			    1,
-			    advance_func,
-			    read_func,
-			    context,
-			    smie_select_right,
-			    smie_select_left);
+  return smie_next_sexp (grammar,
+			 next_token_func,
+			 read_token_func,
+			 context,
+			 smie_select_right,
+			 smie_select_left);
 }
 
 gboolean
 smie_backward_sexp (struct smie_grammar_t *grammar,
-		    smie_advance_function_t advance_func,
-		    smie_read_token_function_t read_func,
+		    smie_next_token_function_t next_token_func,
+		    smie_read_token_function_t read_token_func,
 		    gpointer context)
 {
-  return smie_advance_sexp (grammar,
-			    SMIE_DIRECTION_BACKWARD,
-			    -1,
-			    advance_func,
-			    read_func,
-			    context,
-			    smie_select_left,
-			    smie_select_right);
+  return smie_next_sexp (grammar,
+			 next_token_func,
+			 read_token_func,
+			 context,
+			 smie_select_left,
+			 smie_select_right);
 }
 
 GQuark

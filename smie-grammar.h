@@ -108,41 +108,17 @@ gboolean smie_prec2_to_precs (smie_prec2_grammar_t *prec2,
 			      smie_grammar_t *precs,
 			      GError **error);
 
-typedef enum smie_advance_step_t smie_advance_step_t;
-enum smie_advance_step_t
-  {
-    SMIE_ADVANCE_CHARACTERS,
-    SMIE_ADVANCE_LINES,
-    SMIE_ADVANCE_LINE_ENDS,
-    SMIE_ADVANCE_TOKENS
-  };
-
-typedef enum smie_inspect_request_t smie_inspect_request_t;
-enum smie_inspect_request_t
-  {
-    SMIE_INSPECT_IS_START,
-    SMIE_INSPECT_IS_END,
-    SMIE_INSPECT_STARTS_LINE,
-    SMIE_INSPECT_ENDS_LINE,
-    SMIE_INSPECT_HAS_NEXT,
-    SMIE_INSPECT_HAS_PREVIOUS_LINE
-  };
-
-typedef gboolean (*smie_advance_function_t) (smie_advance_step_t, gint,
-					     gpointer);
-typedef gboolean (*smie_inspect_function_t) (smie_inspect_request_t,
-					     gpointer);
-typedef gboolean (*smie_read_token_function_t) (gchar **, gpointer);
-typedef gunichar (*smie_read_char_function_t) (gpointer);
+typedef gboolean (*smie_next_token_function_t) (gpointer);
+typedef gboolean (*smie_read_token_function_t) (gpointer, gchar **);
 
 gboolean smie_forward_sexp (smie_grammar_t *grammar,
-			    smie_advance_function_t advance_func,
-			    smie_read_token_function_t read_func,
+			    smie_next_token_function_t next_token_func,
+			    smie_read_token_function_t read_token_func,
 			    gpointer context);
 
 gboolean smie_backward_sexp (smie_grammar_t *grammar,
-			     smie_advance_function_t advance_func,
-			     smie_read_token_function_t read_func,
+			     smie_next_token_function_t next_token_func,
+			     smie_read_token_function_t read_token_func,
 			     gpointer context);
 
 G_END_DECLS

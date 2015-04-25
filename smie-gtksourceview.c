@@ -25,102 +25,117 @@
 #include <gtksourceview/gtksource.h>
 
 static gboolean
-smie_gtk_source_buffer_forward_char (GtkTextIter *iter,
-				     GtkSourceBuffer *buffer)
+smie_gtk_source_buffer_forward_char (gpointer data)
 {
-  return gtk_text_iter_forward_char (iter);
+  struct smie_gtk_source_buffer_context_t *context = data;
+  return gtk_text_iter_forward_char (&context->iter);
 }
 
 static gboolean
-smie_gtk_source_buffer_backward_char (GtkTextIter *iter,
-				      GtkSourceBuffer *buffer)
+smie_gtk_source_buffer_backward_char (gpointer data)
 {
-  return gtk_text_iter_backward_char (iter);
+  struct smie_gtk_source_buffer_context_t *context = data;
+  return gtk_text_iter_backward_char (&context->iter);
 }
 
 static gboolean
-smie_gtk_source_buffer_end_of_line (GtkTextIter *iter,
-				    GtkSourceBuffer *buffer)
+smie_gtk_source_buffer_forward_to_line_end (gpointer data)
 {
+  struct smie_gtk_source_buffer_context_t *context = data;
   /* If we are already on the EOL, do nothing.  */
-  if (gtk_text_iter_ends_line (iter))
+  if (gtk_text_iter_ends_line (&context->iter))
     return FALSE;
-  return gtk_text_iter_forward_to_line_end (iter);
+  return gtk_text_iter_forward_to_line_end (&context->iter);
 }
 
 static gboolean
-smie_gtk_source_buffer_beginning_of_line (GtkTextIter *iter,
-					  GtkSourceBuffer *buffer)
+smie_gtk_source_buffer_backward_to_line_start (gpointer data)
 {
+  struct smie_gtk_source_buffer_context_t *context = data;
   GtkTextIter start_iter;
-  gtk_text_iter_assign (&start_iter, iter);
-  while (!gtk_text_iter_starts_line (iter)
-	 && gtk_text_iter_backward_char (iter))
+  gtk_text_iter_assign (&start_iter, &context->iter);
+  while (!gtk_text_iter_starts_line (&context->iter)
+	 && gtk_text_iter_backward_char (&context->iter))
     ;
-  return !gtk_text_iter_equal (iter, &start_iter);
+  return !gtk_text_iter_equal (&context->iter, &start_iter);
 }
 
 static gboolean
-smie_gtk_source_buffer_forward_line (GtkTextIter *iter,
-				     GtkSourceBuffer *buffer)
+smie_gtk_source_buffer_forward_line (gpointer data)
 {
-  return gtk_text_iter_forward_line (iter);
+  struct smie_gtk_source_buffer_context_t *context = data;
+  return gtk_text_iter_forward_line (&context->iter);
 }
 
 static gboolean
-smie_gtk_source_buffer_backward_line (GtkTextIter *iter,
-				      GtkSourceBuffer *buffer)
+smie_gtk_source_buffer_backward_line (gpointer data)
 {
-  return gtk_text_iter_backward_line (iter);
+  struct smie_gtk_source_buffer_context_t *context = data;
+  return gtk_text_iter_backward_line (&context->iter);
 }
 
 static gboolean
-smie_gtk_source_buffer_forward_token (GtkTextIter *iter,
-				      GtkSourceBuffer *buffer)
+smie_gtk_source_buffer_forward_token (gpointer data)
 {
+  struct smie_gtk_source_buffer_context_t *context = data;
+
   /* Empty buffer.  */
-  if (gtk_text_iter_is_start (iter) && gtk_text_iter_is_end (iter))
+  if (gtk_text_iter_is_start (&context->iter)
+      && gtk_text_iter_is_end (&context->iter))
     return FALSE;
+
   /* If ITER is on a comment or a whitespace, skip them.  */
-  else if (gtk_source_buffer_iter_has_context_class (buffer, iter, "comment")
-	   || g_unichar_isspace (gtk_text_iter_get_char (iter)))
+  if (gtk_source_buffer_iter_has_context_class (context->buffer,
+						&context->iter,
+						"comment")
+      || g_unichar_isspace (gtk_text_iter_get_char (&context->iter)))
     {
       GtkTextIter start_iter;
-      gtk_text_iter_assign (&start_iter, iter);
-      while ((gtk_source_buffer_iter_has_context_class (buffer, iter, "comment")
-	      || g_unichar_isspace (gtk_text_iter_get_char (iter)))
-	     && gtk_text_iter_forward_char (iter))
+      gtk_text_iter_assign (&start_iter, &context->iter);
+      while ((gtk_source_buffer_iter_has_context_class (context->buffer,
+							&context->iter,
+							"comment")
+	      || g_unichar_isspace (gtk_text_iter_get_char (&context->iter)))
+	     && gtk_text_iter_forward_char (&context->iter))
 	;
-      return !gtk_text_iter_equal (iter, &start_iter);
+      return !gtk_text_iter_equal (&context->iter, &start_iter);
     }
   /* If ITER is on a string, skip it and any following comments and
      whitespaces.  */
-  else if (gtk_source_buffer_iter_has_context_class (buffer, iter, "string"))
+  else if (gtk_source_buffer_iter_has_context_class (context->buffer,
+						     &context->iter,
+						     "string"))
     {
-      while (gtk_source_buffer_iter_has_context_class (buffer, iter, "string")
-	     && gtk_text_iter_forward_char (iter))
+      while (gtk_source_buffer_iter_has_context_class (context->buffer,
+						       &context->iter,
+						       "string")
+	     && gtk_text_iter_forward_char (&context->iter))
 	;
-      while ((gtk_source_buffer_iter_has_context_class (buffer, iter, "comment")
-	      || g_unichar_isspace (gtk_text_iter_get_char (iter)))
-	     && gtk_text_iter_forward_char (iter))
+      while ((gtk_source_buffer_iter_has_context_class (context->buffer,
+							&context->iter,
+							"comment")
+	      || g_unichar_isspace (gtk_text_iter_get_char (&context->iter)))
+	     && gtk_text_iter_forward_char (&context->iter))
 	;
     }
   /* Otherwise, if ITER is on a normal token.  Skip it and any
      following comments and whitespaces.  */
   else
     {
-      while (!(gtk_source_buffer_iter_has_context_class (buffer,
-							 iter,
+      while (!(gtk_source_buffer_iter_has_context_class (context->buffer,
+							 &context->iter,
 							 "comment")
-	       || gtk_source_buffer_iter_has_context_class (buffer,
-							    iter,
+	       || gtk_source_buffer_iter_has_context_class (context->buffer,
+							    &context->iter,
 							    "string")
-	       || g_unichar_isspace (gtk_text_iter_get_char (iter)))
-	     && gtk_text_iter_forward_char (iter))
+	       || g_unichar_isspace (gtk_text_iter_get_char (&context->iter)))
+	     && gtk_text_iter_forward_char (&context->iter))
 	;
-      while ((gtk_source_buffer_iter_has_context_class (buffer, iter, "comment")
-	      || g_unichar_isspace (gtk_text_iter_get_char (iter)))
-	     && gtk_text_iter_forward_char (iter))
+      while ((gtk_source_buffer_iter_has_context_class (context->buffer,
+							&context->iter,
+							"comment")
+	      || g_unichar_isspace (gtk_text_iter_get_char (&context->iter)))
+	     && gtk_text_iter_forward_char (&context->iter))
 	;
     }
 
@@ -128,136 +143,107 @@ smie_gtk_source_buffer_forward_token (GtkTextIter *iter,
 }
 
 static gboolean
-smie_gtk_source_buffer_backward_token (GtkTextIter *iter,
-				       GtkSourceBuffer *buffer)
+smie_gtk_source_buffer_backward_token (gpointer data)
 {
+  struct smie_gtk_source_buffer_context_t *context = data;
+
   /* Empty buffer.  */
-  if (gtk_text_iter_is_start (iter) && gtk_text_iter_is_end (iter))
+  if (gtk_text_iter_is_start (&context->iter)
+      && gtk_text_iter_is_end (&context->iter))
     return FALSE;
+
   /* If ITER is on a comment or a whitespace, skip them.  If ITER is
      at the end of buffer, think as if there is a whitespace and ITER
      points to it.  */
-  else if (gtk_source_buffer_iter_has_context_class (buffer, iter, "comment")
-	   || g_unichar_isspace (gtk_text_iter_get_char (iter))
-	   || gtk_text_iter_is_end (iter))
+  if (gtk_source_buffer_iter_has_context_class (context->buffer,
+						&context->iter,
+						"comment")
+	   || g_unichar_isspace (gtk_text_iter_get_char (&context->iter))
+	   || gtk_text_iter_is_end (&context->iter))
     {
       GtkTextIter end_iter;
-      gtk_text_iter_assign (&end_iter, iter);
-      while ((gtk_source_buffer_iter_has_context_class (buffer, iter, "comment")
-	      || g_unichar_isspace (gtk_text_iter_get_char (iter))
-	      || gtk_text_iter_is_end (iter))
-	     && gtk_text_iter_backward_char (iter))
+      gtk_text_iter_assign (&end_iter, &context->iter);
+      while ((gtk_source_buffer_iter_has_context_class (context->buffer,
+							&context->iter,
+							"comment")
+	      || g_unichar_isspace (gtk_text_iter_get_char (&context->iter))
+	      || gtk_text_iter_is_end (&context->iter))
+	     && gtk_text_iter_backward_char (&context->iter))
 	;
-      return !gtk_text_iter_equal (iter, &end_iter);
+      return !gtk_text_iter_equal (&context->iter, &end_iter);
     }
   /* If ITER is on a string, skip it and any preceding comments and
      whitespaces.  */
-  else if (gtk_source_buffer_iter_has_context_class (buffer, iter, "string"))
+  else if (gtk_source_buffer_iter_has_context_class (context->buffer,
+						     &context->iter,
+						     "string"))
     {
-      while (gtk_source_buffer_iter_has_context_class (buffer, iter, "string")
-	     && gtk_text_iter_backward_char (iter))
+      while (gtk_source_buffer_iter_has_context_class (context->buffer,
+						       &context->iter,
+						       "string")
+	     && gtk_text_iter_backward_char (&context->iter))
 	;
-      while ((gtk_source_buffer_iter_has_context_class (buffer, iter, "comment")
-	      || g_unichar_isspace (gtk_text_iter_get_char (iter)))
-	     && gtk_text_iter_backward_char (iter))
+      while ((gtk_source_buffer_iter_has_context_class (context->buffer,
+							&context->iter,
+							"comment")
+	      || g_unichar_isspace (gtk_text_iter_get_char (&context->iter)))
+	     && gtk_text_iter_backward_char (&context->iter))
 	;
     }
   /* Otherwise, ITER is on a normal token.  Skip it and any preceding
      comments and whitespaces.  */
   else
     {
-      while (!(gtk_source_buffer_iter_has_context_class (buffer,
-							 iter,
+      while (!(gtk_source_buffer_iter_has_context_class (context->buffer,
+							 &context->iter,
 							 "comment")
-	       || g_unichar_isspace (gtk_text_iter_get_char (iter))
-	       || gtk_source_buffer_iter_has_context_class (buffer,
-							    iter,
+	       || g_unichar_isspace (gtk_text_iter_get_char (&context->iter))
+	       || gtk_source_buffer_iter_has_context_class (context->buffer,
+							    &context->iter,
 							    "string"))
-	     && gtk_text_iter_backward_char (iter))
+	     && gtk_text_iter_backward_char (&context->iter))
 	;
-      while ((gtk_source_buffer_iter_has_context_class (buffer, iter, "comment")
-	      || g_unichar_isspace (gtk_text_iter_get_char (iter)))
-	     && gtk_text_iter_backward_char (iter))
+      while ((gtk_source_buffer_iter_has_context_class (context->buffer,
+							&context->iter,
+							"comment")
+	      || g_unichar_isspace (gtk_text_iter_get_char (&context->iter)))
+	     && gtk_text_iter_backward_char (&context->iter))
 	;
     }
 
   return TRUE;
 }
 
-typedef gboolean (*smie_movement_function_t) (GtkTextIter *, GtkSourceBuffer *);
-
-gboolean
-smie_gtk_source_buffer_advance_func (smie_advance_step_t step, gint count,
-				     gpointer user_data)
+static gboolean
+smie_gtk_source_buffer_is_start (gpointer data)
 {
-  struct smie_gtk_source_buffer_context_t *context = user_data;
-  smie_movement_function_t forward_func, backward_func;
-  GtkTextIter iter;
-  gboolean result;
-  switch (step)
-    {
-    case SMIE_ADVANCE_CHARACTERS:
-      forward_func = smie_gtk_source_buffer_forward_char;
-      backward_func = smie_gtk_source_buffer_backward_char;
-      break;
-
-    case SMIE_ADVANCE_LINES:
-      forward_func = smie_gtk_source_buffer_forward_line;
-      backward_func = smie_gtk_source_buffer_backward_line;
-      break;
-
-    case SMIE_ADVANCE_LINE_ENDS:
-      forward_func = smie_gtk_source_buffer_end_of_line;
-      backward_func = smie_gtk_source_buffer_beginning_of_line;
-      break;
-
-    case SMIE_ADVANCE_TOKENS:
-      forward_func = smie_gtk_source_buffer_forward_token;
-      backward_func = smie_gtk_source_buffer_backward_token;
-      break;
-
-    default:
-      g_return_val_if_reached (FALSE);
-    }
-
-  gtk_text_iter_assign (&iter, &context->iter);
-  if (count > 0)
-    {
-      for (; count > 0; count--)
-	if (!forward_func (&iter, context->buffer))
-	  break;
-    }
-  else
-    {
-      for (; count < 0; count++)
-	if (!backward_func (&iter, context->buffer))
-	  break;
-    }
-  result = !gtk_text_iter_equal (&iter, &context->iter);
-  gtk_text_iter_assign (&context->iter, &iter);
-  return result;
+  struct smie_gtk_source_buffer_context_t *context = data;
+  return gtk_text_iter_is_start (&context->iter);
 }
 
-gboolean
-smie_gtk_source_buffer_inspect_func (smie_inspect_request_t request,
-				     gpointer user_data)
+static gboolean
+smie_gtk_source_buffer_is_end (gpointer data)
 {
-  struct smie_gtk_source_buffer_context_t *context = user_data;
-  GtkTextIter iter;
-  gtk_text_iter_assign (&iter, &context->iter);
-  switch (request)
-    {
-    case SMIE_INSPECT_HAS_PREVIOUS_LINE:
-      smie_gtk_source_buffer_beginning_of_line (&iter, context->buffer);
-      return gtk_text_iter_backward_line (&iter);
-
-    default:
-      g_return_val_if_reached (FALSE);
-    }
+  struct smie_gtk_source_buffer_context_t *context = data;
+  return gtk_text_iter_is_end (&context->iter);
 }
 
-gboolean
-smie_gtk_source_buffer_read_token_func (gchar **token, gpointer user_data)
+static gboolean
+smie_gtk_source_buffer_starts_line (gpointer data)
+{
+  struct smie_gtk_source_buffer_context_t *context = data;
+  return gtk_text_iter_starts_line (&context->iter);
+}
+
+static gboolean
+smie_gtk_source_buffer_ends_line (gpointer data)
+{
+  struct smie_gtk_source_buffer_context_t *context = data;
+  return gtk_text_iter_ends_line (&context->iter);
+}
+
+static gboolean
+smie_gtk_source_buffer_read_token (gpointer user_data, gchar **token)
 {
   struct smie_gtk_source_buffer_context_t *context = user_data;
   if (gtk_text_iter_is_start (&context->iter)
@@ -318,17 +304,43 @@ smie_gtk_source_buffer_read_token_func (gchar **token, gpointer user_data)
     }
 }
 
-gunichar
-smie_gtk_source_buffer_read_char_func (gpointer user_data)
+static gunichar
+smie_gtk_source_buffer_read_char (gpointer user_data)
 {
   struct smie_gtk_source_buffer_context_t *context = user_data;
   return gtk_text_iter_get_char (&context->iter);
 }
 
+static void
+smie_gtk_source_buffer_push_context (gpointer data)
+{
+  struct smie_gtk_source_buffer_context_t *context = data;
+  gtk_text_iter_assign (&context->saved_iter, &context->iter);
+}
+
+static void
+smie_gtk_source_buffer_pop_context (gpointer data)
+{
+  struct smie_gtk_source_buffer_context_t *context = data;
+  gtk_text_iter_assign (&context->iter, &context->saved_iter);
+}
+
 smie_cursor_functions_t smie_gtk_source_buffer_cursor_functions =
   {
-    smie_gtk_source_buffer_advance_func,
-    smie_gtk_source_buffer_inspect_func,
-    smie_gtk_source_buffer_read_token_func,
-    smie_gtk_source_buffer_read_char_func
+    smie_gtk_source_buffer_forward_char,
+    smie_gtk_source_buffer_backward_char,
+    smie_gtk_source_buffer_forward_line,
+    smie_gtk_source_buffer_backward_line,
+    smie_gtk_source_buffer_forward_to_line_end,
+    smie_gtk_source_buffer_backward_to_line_start,
+    smie_gtk_source_buffer_forward_token,
+    smie_gtk_source_buffer_backward_token,
+    smie_gtk_source_buffer_is_start,
+    smie_gtk_source_buffer_is_end,
+    smie_gtk_source_buffer_starts_line,
+    smie_gtk_source_buffer_ends_line,
+    smie_gtk_source_buffer_read_token,
+    smie_gtk_source_buffer_read_char,
+    smie_gtk_source_buffer_push_context,
+    smie_gtk_source_buffer_pop_context
   };

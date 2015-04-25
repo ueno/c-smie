@@ -40,11 +40,7 @@ smie_indenter_new (smie_grammar_t *grammar,
 
   g_return_val_if_fail (grammar, NULL);
   g_return_val_if_fail (step >= 0, NULL);
-  g_return_val_if_fail (functions
-			&& functions->advance
-			&& functions->inspect
-			&& functions->read_token
-			&& functions->read_char, NULL);
+  g_return_val_if_fail (functions, NULL);
 
   result = g_new0 (struct smie_indenter_t, 1);
   result->ref_count = 1;
@@ -84,7 +80,7 @@ smie_indenter_calculate_bol_column (struct smie_indenter_t *indenter,
 				    gpointer context)
 {
   gint column = 0;
-  indenter->functions->advance (SMIE_ADVANCE_LINE_ENDS, -1, context);
+  indenter->functions->backward_to_line_start (context);
   do
     {
       gunichar uc = indenter->functions->read_char (context);
@@ -92,7 +88,7 @@ smie_indenter_calculate_bol_column (struct smie_indenter_t *indenter,
 	break;
       column++;
     }
-  while (indenter->functions->advance (SMIE_ADVANCE_CHARACTERS, 1, context));
+  while (indenter->functions->forward_char (context));
   return column;
 }
 
@@ -103,13 +99,17 @@ smie_indenter_calculate (struct smie_indenter_t *indenter,
   gchar *token;
   gboolean result;
 
-  if (!indenter->functions->inspect (SMIE_INSPECT_HAS_PREVIOUS_LINE, context))
+  indenter->functions->push_context (context);
+  indenter->functions->backward_to_line_start (context);
+  result = indenter->functions->is_start (context);
+  indenter->functions->pop_context (context);
+  if (result)
     return 0;
 
-  indenter->functions->advance (SMIE_ADVANCE_LINE_ENDS, 1, context);
-  indenter->functions->advance (SMIE_ADVANCE_TOKENS, -1, context);
+  indenter->functions->forward_to_line_end (context);
+  indenter->functions->backward_token (context);
 
-  if (!indenter->functions->read_token (&token, context))
+  if (!indenter->functions->read_token (context, &token))
     return 0;
 
   result = smie_grammar_is_closer (indenter->grammar, token);
@@ -117,13 +117,13 @@ smie_indenter_calculate (struct smie_indenter_t *indenter,
   if (result)
     {
       if (smie_backward_sexp (indenter->grammar,
-			      indenter->functions->advance,
+			      indenter->functions->backward_token,
 			      indenter->functions->read_token,
 			      context))
 	return smie_indenter_calculate_bol_column (indenter, context);
     }
 
-  indenter->functions->advance (SMIE_ADVANCE_LINES, -1, context);
+  indenter->functions->backward_line (context);
   return indenter->step
     + smie_indenter_calculate_bol_column (indenter, context);
 }

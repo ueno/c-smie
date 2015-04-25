@@ -35,12 +35,8 @@ struct smie_test_context_t
 {
   const gchar *input;
   goffset offset;
+  goffset saved_offset;
 };
-
-gboolean smie_test_advance_func (smie_advance_step_t step, gint count,
-				 gpointer user_data);
-gboolean smie_test_read_token_func (gchar **token, gpointer user_data);
-gunichar smie_test_read_char_func (gpointer user_data);
 
 smie_cursor_functions_t smie_test_cursor_functions;
 
