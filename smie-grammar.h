@@ -37,6 +37,15 @@ enum smie_symbol_type_t
     SMIE_SYMBOL_NON_TERMINAL
   };
 
+typedef enum smie_symbol_class_t smie_symbol_class_t;
+enum smie_symbol_class_t
+  {
+    SMIE_SYMBOL_CLASS_NEITHER,
+    SMIE_SYMBOL_CLASS_OPENER,
+    SMIE_SYMBOL_CLASS_CLOSER,
+    SMIE_SYMBOL_CLASS_INNER
+  };
+
 typedef enum smie_prec2_type_t smie_prec2_type_t;
 enum smie_prec2_type_t
   {
@@ -93,30 +102,26 @@ gboolean smie_prec2_grammar_add_rule (smie_prec2_grammar_t *prec2,
 				      smie_prec2_type_t type,
 				      smie_prec2_grammar_t *override);
 gboolean smie_prec2_grammar_add_pair (smie_prec2_grammar_t *prec2,
-				      const gchar *opener_token,
-				      const gchar *closer_token,
-				      gboolean is_last);
+				      const smie_symbol_t *opener_symbol,
+				      const smie_symbol_t *closer_symbol);
 
 smie_grammar_t *smie_grammar_alloc (smie_symbol_pool_t *pool);
 void smie_grammar_free (smie_grammar_t *grammar);
 smie_grammar_t *smie_grammar_ref (smie_grammar_t *grammar);
 void smie_grammar_unref (smie_grammar_t *grammar);
-gboolean smie_grammar_add_rule (smie_grammar_t *grammar,
-				const smie_symbol_t *symbol,
-				gint left_prec,
-				gboolean left_is_first,
-				gint right_prec,
-				gboolean right_is_last,
-				gboolean right_is_closer);
-gboolean smie_grammar_is_first (smie_grammar_t *grammar,
-				const gchar *token);
-gboolean smie_grammar_is_last (smie_grammar_t *grammar,
-			       const gchar *token);
-gboolean smie_grammar_is_closer (smie_grammar_t *grammar,
-				 const gchar *token);
-gboolean smie_grammar_is_pair (smie_grammar_t *grammar,
-			       const gchar *opener_token,
-			       const gchar *closer_token);
+gboolean smie_grammar_add_level (smie_grammar_t *grammar,
+				 const smie_symbol_t *symbol,
+				 gint left_prec,
+				 gint right_prec);
+smie_symbol_class_t smie_grammar_get_symbol_class (smie_grammar_t *grammar,
+						   const smie_symbol_t *symbol);
+void smie_grammar_set_symbol_class (smie_grammar_t *grammar,
+				    const smie_symbol_t *symbol,
+				    smie_symbol_class_t symbol_class);
+smie_symbol_pool_t *smie_grammar_get_symbol_pool (smie_grammar_t *grammar);
+gboolean smie_grammar_has_pair (smie_grammar_t *grammar,
+				const smie_symbol_t *opener_symbol,
+				const smie_symbol_t *closer_symbol);
 
 gboolean smie_bnf_to_prec2 (smie_bnf_grammar_t *bnf,
 			    smie_prec2_grammar_t *prec2,

@@ -98,6 +98,9 @@ smie_indenter_calculate (struct smie_indenter_t *indenter,
 {
   gchar *token;
   gboolean result;
+  const smie_symbol_t *symbol;
+  smie_symbol_class_t symbol_class;
+  smie_symbol_pool_t *pool;
 
   /* If the cursor is on the first line, return 0.  */
   indenter->functions->push_context (context);
@@ -115,9 +118,12 @@ smie_indenter_calculate (struct smie_indenter_t *indenter,
   if (!indenter->functions->read_token (context, &token))
     return 0;
 
-  result = smie_grammar_is_closer (indenter->grammar, token);
+  pool = smie_grammar_get_symbol_pool (indenter->grammar);
+  symbol = smie_symbol_intern (pool, token, SMIE_SYMBOL_TERMINAL);
+  symbol_class = smie_grammar_get_symbol_class (indenter->grammar, symbol);
   g_free (token);
-  if (result)
+  if (symbol_class == SMIE_SYMBOL_CLASS_INNER
+      || symbol_class == SMIE_SYMBOL_CLASS_CLOSER)
     {
       indenter->functions->push_context (context);
       if (smie_backward_sexp (indenter->grammar,
@@ -130,14 +136,13 @@ smie_indenter_calculate (struct smie_indenter_t *indenter,
 	  return indent;
 	}
 
-      /* Even if there is no matching opener, if the cursor moved to
-	 an opener, align to it.  I.e. IF ... THEN ... ELSE  */
-      result = indenter->functions->read_token (context, &token);
-      if (result)
+      if (indenter->functions->read_token (context, &token))
 	{
-	  result = smie_grammar_is_first (indenter->grammar, token);
+	  symbol = smie_symbol_intern (pool, token, SMIE_SYMBOL_TERMINAL);
+	  symbol_class = smie_grammar_get_symbol_class (indenter->grammar,
+							symbol);
 	  g_free (token);
-	  if (result)
+	  if (symbol_class == SMIE_SYMBOL_CLASS_OPENER)
 	    {
 	      gint indent = smie_indenter_calculate_bol_column (indenter,
 								context);
@@ -155,9 +160,10 @@ smie_indenter_calculate (struct smie_indenter_t *indenter,
     indenter->functions->forward_token (context, FALSE);
   if (indenter->functions->read_token (context, &token))
     {
-      result = smie_grammar_is_last (indenter->grammar, token);
+      symbol = smie_symbol_intern (pool, token, SMIE_SYMBOL_TERMINAL);
+      symbol_class = smie_grammar_get_symbol_class (indenter->grammar, symbol);
       g_free (token);
-      if (result)
+      if (symbol_class == SMIE_SYMBOL_CLASS_CLOSER)
 	return smie_indenter_calculate_bol_column (indenter, context);
     }
 

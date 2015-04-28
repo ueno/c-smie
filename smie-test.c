@@ -123,31 +123,14 @@ smie_test_prec2_grammar_equal (struct smie_prec2_grammar_t *a,
 					     &key1, &value1))
 	    return FALSE;
 	}
-      g_hash_table_iter_init (&iter, permutations[i].from->first);
+      g_hash_table_iter_init (&iter, permutations[i].from->classes);
       while (g_hash_table_iter_next (&iter, &key, &value))
 	{
 	  gpointer key1, value1;
-	  if (!g_hash_table_lookup_extended (permutations[i].to->first, key,
+	  if (!g_hash_table_lookup_extended (permutations[i].to->classes, key,
 					     &key1, &value1)
-	      || key != key1)
-	    return FALSE;
-	}
-      g_hash_table_iter_init (&iter, permutations[i].from->last);
-      while (g_hash_table_iter_next (&iter, &key, &value))
-	{
-	  gpointer key1, value1;
-	  if (!g_hash_table_lookup_extended (permutations[i].to->last, key,
-					     &key1, &value1)
-	      || key != key1)
-	    return FALSE;
-	}
-      g_hash_table_iter_init (&iter, permutations[i].from->closer);
-      while (g_hash_table_iter_next (&iter, &key, &value))
-	{
-	  gpointer key1, value1;
-	  if (!g_hash_table_lookup_extended (permutations[i].to->closer, key,
-					     &key1, &value1)
-	      || key != key1)
+	      || key != key1
+	      || value != value1)
 	    return FALSE;
 	}
       g_hash_table_iter_init (&iter, permutations[i].from->opener_closer);

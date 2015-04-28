@@ -144,7 +144,11 @@ populate_prec2_grammar (smie_symbol_pool_t *pool)
   ADD (TV ("N"), GT, T ("x"));
   ADD (TV ("N"), GT, T ("#"));
 
-  smie_prec2_grammar_add_pair (prec2, "(", ")", TRUE);
+  smie_prec2_grammar_set_symbol_class (prec2, T ("("),
+				       SMIE_SYMBOL_CLASS_OPENER);
+  smie_prec2_grammar_set_symbol_class (prec2, T (")"),
+				       SMIE_SYMBOL_CLASS_CLOSER);
+  smie_prec2_grammar_add_pair (prec2, T ("("), T (")"));
 
 #undef ADD
 #undef T
@@ -163,12 +167,15 @@ populate_grammar (smie_symbol_pool_t *pool)
 #define TV(x)							\
   smie_symbol_intern (pool, (x), SMIE_SYMBOL_TERMINAL_VARIABLE)
 
-  smie_grammar_add_level (grammar, T ("#"), 1, FALSE, 1, FALSE, FALSE);
-  smie_grammar_add_level (grammar, T ("("), 0, TRUE, 56, FALSE, FALSE);
-  smie_grammar_add_level (grammar, T ("+"), 23, FALSE, 12, FALSE, FALSE);
-  smie_grammar_add_level (grammar, T ("x"), 45, FALSE, 34, FALSE, FALSE);
-  smie_grammar_add_level (grammar, T (")"), 57, FALSE, 0, TRUE, TRUE);
-  smie_grammar_add_level (grammar, TV ("N"), 58, FALSE, 59, FALSE, FALSE);
+  smie_grammar_add_level (grammar, T ("#"), 1, 1);
+  smie_grammar_add_level (grammar, T ("("), 0, 56);
+  smie_grammar_add_level (grammar, T ("+"), 23, 12);
+  smie_grammar_add_level (grammar, T ("x"), 45, 34);
+  smie_grammar_add_level (grammar, T (")"), 57, 0);
+  smie_grammar_add_level (grammar, TV ("N"), 58, 59);
+
+  smie_grammar_set_symbol_class (grammar, T ("("), SMIE_SYMBOL_CLASS_OPENER);
+  smie_grammar_set_symbol_class (grammar, T (")"), SMIE_SYMBOL_CLASS_CLOSER);
 
 #undef T
 #undef TV
