@@ -68,7 +68,7 @@ setup (struct fixture *fixture, gconstpointer user_data)
 
   error = NULL;
   prec2 = smie_prec2_grammar_alloc (pool);
-  g_assert (smie_bnf_to_prec2 (bnf, prec2, &error));
+  g_assert (smie_bnf_to_prec2 (bnf, prec2, NULL, &error));
   g_assert_no_error (error);
   smie_bnf_grammar_free (bnf);
 

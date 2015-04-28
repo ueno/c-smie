@@ -260,7 +260,8 @@ gboolean
 smie_prec2_grammar_add_rule (struct smie_prec2_grammar_t *prec2,
 			     const struct smie_symbol_t *left,
 			     const struct smie_symbol_t *right,
-			     enum smie_prec2_type_t type)
+			     enum smie_prec2_type_t type,
+			     struct smie_prec2_grammar_t *override)
 {
   struct smie_prec2_t p2;
   gpointer value;
@@ -269,7 +270,17 @@ smie_prec2_grammar_add_rule (struct smie_prec2_grammar_t *prec2,
   p2.right = right;
   if (g_hash_table_lookup_extended (prec2->prec2, &p2, NULL, &value)
       && GPOINTER_TO_INT (value) != type)
-    return FALSE;
+    {
+      if (override
+	  && g_hash_table_lookup_extended (override->prec2, &p2, NULL, &value))
+	{
+	  g_hash_table_insert (prec2->prec2,
+			       g_memdup (&p2, sizeof (struct smie_prec2_t)),
+			       value);
+	  return TRUE;
+	}
+      return FALSE;
+    }
 
   g_hash_table_insert (prec2->prec2,
 		       g_memdup (&p2, sizeof (struct smie_prec2_t)),
@@ -320,6 +331,103 @@ smie_prec2_grammar_add_pair (struct smie_prec2_grammar_t *prec2,
 					     opener_symbol,
 					     closer_symbol,
 					     is_last);
+}
+
+struct smie_precs_grammar_t *
+smie_precs_grammar_alloc (struct smie_symbol_pool_t *pool)
+{
+  struct smie_precs_grammar_t *result = g_new0 (struct smie_precs_grammar_t, 1);
+  result->pool = smie_symbol_pool_ref (pool);
+  return result;
+}
+
+static void
+smie_prec_free (struct smie_prec_t *prec)
+{
+  g_list_free (prec->op);
+  g_free (prec);
+}
+
+void
+smie_precs_grammar_free (struct smie_precs_grammar_t *precs)
+{
+  smie_symbol_pool_unref (precs->pool);
+  g_list_free_full (precs->precs, (GDestroyNotify) smie_prec_free);
+  g_free (precs);
+}
+
+void
+smie_precs_grammar_add_prec (struct smie_precs_grammar_t *precs,
+			     smie_prec_type_t type,
+			     const smie_symbol_t **symbols)
+{
+  struct smie_prec_t *prec = g_new0 (struct smie_prec_t, 1);
+  prec->type = type;
+  for (; *symbols; symbols++)
+    prec->op = g_list_append (prec->op, (gpointer) *symbols);
+  precs->precs = g_list_append (precs->precs, (gpointer) prec);
+}
+
+static void
+smie_precs_to_prec2 (struct smie_precs_grammar_t *precs,
+		     struct smie_prec2_grammar_t *prec2)
+{
+  GList *l = precs->precs;
+  for (; l; l = l->next)
+    {
+      struct smie_prec_t *prec = l->data;
+      smie_prec_type_t type = prec->type;
+      struct smie_symbol_t *op = prec->op->data;
+      GList *l2 = prec->op;
+      for (; l2; l2 = l2->next)
+	{
+	  struct smie_symbol_t *other_op = l2->data;
+	  GList *l3;
+	  smie_prec_type_t op1, op2;
+	  switch (type)
+	    {
+	    case SMIE_PREC_LEFT:
+	      smie_prec2_grammar_add_rule (prec2, op, other_op, SMIE_PREC2_GT,
+					   NULL);
+	      break;
+	    case SMIE_PREC_RIGHT:
+	      smie_prec2_grammar_add_rule (prec2, op, other_op, SMIE_PREC2_LT,
+					   NULL);
+	      break;
+	    case SMIE_PREC_ASSOC:
+	      smie_prec2_grammar_add_rule (prec2,
+					   op, other_op, SMIE_PREC2_EQ,
+					   NULL);
+	      break;
+	    default:
+	      break;
+	    }
+
+	  op1 = SMIE_PREC2_LT;
+	  op2 = SMIE_PREC2_GT;
+	  for (l3 = precs->precs; l3; l3 = l3->next)
+	    {
+	      struct smie_prec_t *other_prec = l3->data;
+	      if (prec == other_prec)
+		{
+		  op1 = SMIE_PREC2_GT;
+		  op2 = SMIE_PREC2_LT;
+		}
+	      else
+		{
+		  GList *l4 = other_prec->op;
+		  other_op = l4->data;
+		  for (; l4; l4 = l4->next)
+		    {
+		      smie_prec2_grammar_add_rule (prec2, op, other_op, op2,
+						   NULL);
+		      smie_prec2_grammar_add_rule (prec2, other_op, op, op1,
+						   NULL);
+		    }
+		}
+	    }
+	}
+    }
 }
 
 struct smie_grammar_t *
@@ -467,12 +575,25 @@ smie_debug_dump_op_set (GHashTable *op, const char *name)
 gboolean
 smie_bnf_to_prec2 (struct smie_bnf_grammar_t *bnf,
 		   struct smie_prec2_grammar_t *prec2,
+		   GList *resolvers,
 		   GError **error)
 {
   GHashTable *first_op = smie_bnf_grammar_build_op_set (bnf, FALSE);
   GHashTable *last_op = smie_bnf_grammar_build_op_set (bnf, TRUE);
   GHashTableIter iter;
+  struct smie_prec2_grammar_t *override = NULL;
   gpointer value;
+
+  if (resolvers)
+    {
+      GList *l;
+      override = smie_prec2_grammar_alloc (smie_symbol_pool_ref (prec2->pool));
+      for (l = resolvers; l; l = l->next)
+	{
+	  struct smie_precs_grammar_t *precs = l->data;
+	  smie_precs_to_prec2 (precs, override);
+	}
+    }
 
   g_hash_table_iter_init (&iter, bnf->rules);
   while (g_hash_table_iter_next (&iter, NULL, &value))
@@ -528,7 +649,8 @@ smie_bnf_to_prec2 (struct smie_bnf_grammar_t *bnf,
 			smie_prec2_grammar_add_rule (prec2,
 						     a,
 						     b,
-						     SMIE_PREC2_EQ);
+						     SMIE_PREC2_EQ,
+						     override);
 		      else if (b->type == SMIE_SYMBOL_NON_TERMINAL
 			       || b->type == SMIE_SYMBOL_TERMINAL_VARIABLE)
 			{
@@ -544,7 +666,8 @@ smie_bnf_to_prec2 (struct smie_bnf_grammar_t *bnf,
 				smie_prec2_grammar_add_rule (prec2,
 							     a,
 							     c,
-							     SMIE_PREC2_EQ);
+							     SMIE_PREC2_EQ,
+							     override);
 			    }
 			  op_b = g_hash_table_lookup (first_op, b);
 			  if (!op_b)
@@ -556,7 +679,8 @@ smie_bnf_to_prec2 (struct smie_bnf_grammar_t *bnf,
 			      smie_prec2_grammar_add_rule (prec2,
 							   a,
 							   d,
-							   SMIE_PREC2_LT);
+							   SMIE_PREC2_LT,
+							   override);
 			    }
 			}
 		    }
@@ -583,7 +707,8 @@ smie_bnf_to_prec2 (struct smie_bnf_grammar_t *bnf,
 			      smie_prec2_grammar_add_rule (prec2,
 							   e,
 							   b,
-							   SMIE_PREC2_GT);
+							   SMIE_PREC2_GT,
+							   override);
 			    }
 			}
 		    }
@@ -592,6 +717,8 @@ smie_bnf_to_prec2 (struct smie_bnf_grammar_t *bnf,
 	}
     }
 
+  if (override)
+    smie_prec2_grammar_free (override);
   g_hash_table_unref (first_op);
   g_hash_table_unref (last_op);
   return TRUE;

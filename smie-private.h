@@ -66,6 +66,18 @@ struct smie_prec2_grammar_t
   GHashTable *opener_closer;
 };
 
+struct smie_prec_t
+{
+  enum smie_prec_type_t type;
+  GList *op;
+};
+
+struct smie_precs_grammar_t
+{
+  struct smie_symbol_pool_t *pool;
+  GList *precs;
+};
+
 enum smie_func_type_t
   {
     SMIE_FUNC_F,

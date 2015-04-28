@@ -26,6 +26,7 @@ typedef struct smie_symbol_pool_t smie_symbol_pool_t;
 typedef struct smie_symbol_t smie_symbol_t;
 typedef struct smie_bnf_grammar_t smie_bnf_grammar_t;
 typedef struct smie_prec2_grammar_t smie_prec2_grammar_t;
+typedef struct smie_precs_grammar_t smie_precs_grammar_t;
 typedef struct smie_grammar_t smie_grammar_t;
 
 typedef enum smie_symbol_type_t smie_symbol_type_t;
@@ -42,6 +43,15 @@ enum smie_prec2_type_t
     SMIE_PREC2_EQ,
     SMIE_PREC2_LT,
     SMIE_PREC2_GT
+  };
+
+typedef enum smie_prec_type_t smie_prec_type_t;
+enum smie_prec_type_t
+  {
+    SMIE_PREC_LEFT,
+    SMIE_PREC_RIGHT,
+    SMIE_PREC_ASSOC,
+    SMIE_PREC_NON_ASSOC
   };
 
 smie_symbol_pool_t *smie_symbol_pool_alloc (void);
@@ -69,12 +79,19 @@ gboolean smie_bnf_grammar_load (smie_bnf_grammar_t *bnf,
 gboolean smie_bnf_grammar_add_rule (smie_bnf_grammar_t *bnf,
 				    GList *symbols);
 
+smie_precs_grammar_t *smie_precs_grammar_alloc (smie_symbol_pool_t *pool);
+void smie_precs_grammar_free (smie_precs_grammar_t *precs);
+void smie_precs_grammar_add_prec (struct smie_precs_grammar_t *precs,
+				  smie_prec_type_t type,
+				  const smie_symbol_t **symbols);
+
 smie_prec2_grammar_t *smie_prec2_grammar_alloc (smie_symbol_pool_t *pool);
 void smie_prec2_grammar_free (smie_prec2_grammar_t *prec2);
 gboolean smie_prec2_grammar_add_rule (smie_prec2_grammar_t *prec2,
 				      const smie_symbol_t *left,
 				      const smie_symbol_t *right,
-				      smie_prec2_type_t type);
+				      smie_prec2_type_t type,
+				      smie_prec2_grammar_t *override);
 gboolean smie_prec2_grammar_add_pair (smie_prec2_grammar_t *prec2,
 				      const gchar *opener_token,
 				      const gchar *closer_token,
@@ -103,6 +120,7 @@ gboolean smie_grammar_is_pair (smie_grammar_t *grammar,
 
 gboolean smie_bnf_to_prec2 (smie_bnf_grammar_t *bnf,
 			    smie_prec2_grammar_t *prec2,
+			    GList *resolvers,
 			    GError **error);
 gboolean smie_prec2_to_grammar (smie_prec2_grammar_t *prec2,
 				smie_grammar_t *grammar,

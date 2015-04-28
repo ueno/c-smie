@@ -129,7 +129,7 @@ set_indenter (EditorApplicationWindow *window, const gchar *language)
 
   error = NULL;
   prec2 = smie_prec2_grammar_alloc (pool);
-  if (!smie_bnf_to_prec2 (bnf, prec2, &error))
+  if (!smie_bnf_to_prec2 (bnf, prec2, NULL, &error))
     {
       g_warning ("Error while converting BNF to prec2: %s", error->message);
       g_error_free (error);

@@ -111,7 +111,7 @@ populate_prec2_grammar (smie_symbol_pool_t *pool)
 #define TV(x)							\
   smie_symbol_intern (pool, (x), SMIE_SYMBOL_TERMINAL_VARIABLE)
 #define ADD(left,op,right)						\
-  smie_prec2_grammar_add_rule (prec2, (left), (right), SMIE_PREC2_ ## op);
+  smie_prec2_grammar_add_rule (prec2, (left), (right), SMIE_PREC2_ ## op, NULL);
 
   ADD (T ("#"), EQ, T ("#"));
   ADD (T ("#"), LT, T ("+"));
@@ -233,7 +233,7 @@ test_construct_prec2 (struct fixture *fixture, gconstpointer user_data)
   expected = populate_prec2_grammar (fixture->pool);
   actual = smie_prec2_grammar_alloc (fixture->pool);
   error = NULL;
-  g_assert (smie_bnf_to_prec2 (fixture->bnf, actual, &error));
+  g_assert (smie_bnf_to_prec2 (fixture->bnf, actual, NULL, &error));
   g_assert_no_error (error);
   g_assert (smie_test_prec2_grammar_equal (expected, actual));
   smie_prec2_grammar_free (expected);
