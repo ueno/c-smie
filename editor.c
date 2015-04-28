@@ -23,6 +23,7 @@
 #include <glib/gprintf.h>
 #include <gtksourceview/gtksource.h>
 #include <smie-gtksourceview.h>
+#include <stdlib.h>
 #include <string.h>
 
 struct _EditorApplication
@@ -70,16 +71,7 @@ G_DEFINE_TYPE (EditorApplication, editor_application, GTK_TYPE_APPLICATION);
 G_DEFINE_TYPE (EditorApplicationWindow, editor_application_window,
                GTK_TYPE_APPLICATION_WINDOW);
 
-static void
-editor_application_activate (GApplication *application)
-{
-  EditorApplicationWindow *window;
-
-  window = g_object_new (EDITOR_TYPE_APPLICATION_WINDOW,
-			 "application", application,
-			 NULL);
-  gtk_window_present (GTK_WINDOW (window));
-}
+static const gchar *indent_filename;
 
 static void
 remove_all_marks (GtkSourceBuffer *buffer)
@@ -92,9 +84,8 @@ remove_all_marks (GtkSourceBuffer *buffer)
 }
 
 static void
-set_indenter (EditorApplicationWindow *window, const gchar *language)
+set_indenter (EditorApplicationWindow *window, const gchar *filename)
 {
-  gchar *filename = g_strdup_printf ("%s.grammar", language);
   GMappedFile *mapped_file;
   smie_symbol_pool_t *pool;
   smie_bnf_grammar_t *bnf;
@@ -172,8 +163,7 @@ load_ready (GObject *source_object, GAsyncResult *res, gpointer user_data)
       g_warning ("Error while loading the file: %s", error->message);
       g_error_free (error);
       g_clear_object (&window->file);
-      g_object_unref (loader);
-      return;
+      goto out;
     }
 
   gtk_text_buffer_get_start_iter (GTK_TEXT_BUFFER (window->buffer), &iter);
@@ -187,12 +177,13 @@ load_ready (GObject *source_object, GAsyncResult *res, gpointer user_data)
 							 NULL);
   g_free (filename);
   if (language)
-    {
-      gtk_source_buffer_set_language (window->buffer, language);
-      set_indenter (window, gtk_source_language_get_id (language));
-    }
-  g_object_unref (loader);
+    gtk_source_buffer_set_language (window->buffer, language);
 
+  if (indent_filename)
+    set_indenter (window, indent_filename);
+
+ out:
+  g_object_unref (loader);
   gtk_window_present (GTK_WINDOW (window));
 }
 
@@ -202,27 +193,45 @@ editor_application_open (GApplication *application,
 			 gint n_files,
 			 const gchar *hint)
 {
-  GFile *location = files[0];
-  GtkSourceFileLoader *loader;
+  gint i;
+  for (i = 0; i < n_files; i++)
+    {
+      EditorApplicationWindow *window;
+      GFile *location = files[i];
+      GtkSourceFileLoader *loader;
+
+      window = g_object_new (EDITOR_TYPE_APPLICATION_WINDOW,
+			     "application", application,
+			     NULL);
+      g_clear_object (&window->file);
+      window->file = gtk_source_file_new ();
+
+      gtk_source_file_set_location (window->file, location);
+      loader = gtk_source_file_loader_new (window->buffer, window->file);
+      remove_all_marks (window->buffer);
+
+      gtk_source_file_loader_load_async (loader,
+					 G_PRIORITY_DEFAULT,
+					 NULL,
+					 NULL, NULL, NULL,
+					 (GAsyncReadyCallback) load_ready,
+					 window);
+    }
+}
+
+static void
+editor_application_activate (GApplication *application)
+{
   EditorApplicationWindow *window;
 
   window = g_object_new (EDITOR_TYPE_APPLICATION_WINDOW,
 			 "application", application,
 			 NULL);
 
-  g_clear_object (&window->file);
-  window->file = gtk_source_file_new ();
+  if (indent_filename)
+    set_indenter (window, indent_filename);
 
-  gtk_source_file_set_location (window->file, location);
-  loader = gtk_source_file_loader_new (window->buffer, window->file);
-  remove_all_marks (window->buffer);
-
-  gtk_source_file_loader_load_async (loader,
-				     G_PRIORITY_DEFAULT,
-				     NULL,
-				     NULL, NULL, NULL,
-				     (GAsyncReadyCallback) load_ready,
-				     window);
+  gtk_window_present (GTK_WINDOW (window));
 }
 
 static gboolean
@@ -316,11 +325,28 @@ editor_application_window_init (EditorApplicationWindow *window)
   window->buffer = GTK_SOURCE_BUFFER (gtk_text_view_get_buffer (view));
 }
 
+static GOptionEntry entries[] =
+  {
+    { "indent", 'i', 0, G_OPTION_ARG_STRING, &indent_filename,
+      "Use FILE as indentation rule", "FILE" },
+    { NULL }
+  };
+
 int
 main (int argc, char **argv)
 {
   GApplication *application;
+  GOptionContext *context;
+  GError *error = NULL;
   int status;
+
+  context = g_option_context_new ("- editor");
+  g_option_context_add_main_entries (context, entries, "editor");
+  if (!g_option_context_parse (context, &argc, &argv, &error))
+    {
+      g_printerr ("option parsing failed: %s\n", error->message);
+      return EXIT_FAILURE;
+    }
 
   application = g_object_new (EDITOR_TYPE_APPLICATION,
 			      "application-id", "org.du_a.Editor",
