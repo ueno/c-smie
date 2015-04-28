@@ -174,14 +174,14 @@ smie_test_grammar_equal (struct smie_grammar_t *a,
     {
       GHashTableIter iter;
       gpointer key, value;
-      g_hash_table_iter_init (&iter, permutations[i].from->precs);
+      g_hash_table_iter_init (&iter, permutations[i].from->levels);
       while (g_hash_table_iter_next (&iter, &key, &value))
 	{
 	  gpointer key1, value1;
-	  if (!g_hash_table_lookup_extended (permutations[i].to->precs, key,
+	  if (!g_hash_table_lookup_extended (permutations[i].to->levels, key,
 					     &key1, &value1)
 	      || key != key1
-	      || memcmp (value, value1, sizeof (struct smie_prec_t)) != 0)
+	      || memcmp (value, value1, sizeof (struct smie_level_t)) != 0)
 	    return FALSE;
 	}
 

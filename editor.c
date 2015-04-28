@@ -140,7 +140,7 @@ set_indenter (EditorApplicationWindow *window, const gchar *language)
 
   error = NULL;
   grammar = smie_grammar_alloc (pool);
-  if (!smie_prec2_to_precs (prec2, grammar, &error))
+  if (!smie_prec2_to_grammar (prec2, grammar, &error))
     {
       g_warning ("Error while converting prec2 to grammar: %s", error->message);
       g_error_free (error);

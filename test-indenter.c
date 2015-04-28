@@ -44,7 +44,7 @@ setup (struct fixture *fixture, gconstpointer user_data)
   smie_symbol_pool_t *pool = smie_symbol_pool_alloc ();
   smie_bnf_grammar_t *bnf;
   smie_prec2_grammar_t *prec2;
-  smie_grammar_t *precs;
+  smie_grammar_t *grammar;
   int fd;
   struct stat statbuf;
   GError *error;
@@ -73,13 +73,13 @@ setup (struct fixture *fixture, gconstpointer user_data)
   smie_bnf_grammar_free (bnf);
 
   error = NULL;
-  precs = smie_grammar_alloc (pool);
-  smie_prec2_to_precs (prec2, precs, &error);
+  grammar = smie_grammar_alloc (pool);
+  smie_prec2_to_grammar (prec2, grammar, &error);
   g_assert_no_error (error);
   smie_prec2_grammar_free (prec2);
   smie_symbol_pool_unref (pool);
 
-  fixture->indenter = smie_indenter_new (precs,
+  fixture->indenter = smie_indenter_new (grammar,
 					 2,
 					 &smie_test_cursor_functions);
 

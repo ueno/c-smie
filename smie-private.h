@@ -84,7 +84,7 @@ struct smie_func_t
   enum smie_func_type_t type;
 };
 
-struct smie_prec_t
+struct smie_level_t
 {
   gint left_prec;
   gboolean is_first;
@@ -97,7 +97,7 @@ struct smie_prec_t
 struct smie_grammar_t
 {
   struct smie_symbol_pool_t *pool;
-  GHashTable *precs;
+  GHashTable *levels;
   GHashTable *opener_closer;
 };
 

@@ -27,7 +27,7 @@
 
 #ifdef DEBUG
 extern void
-smie_debug_dump_prec2_grammar (smie_prec2_grammar_t *grammar);
+smie_debug_dump_prec2_grammar (smie_prec2_grammar_t *prec2);
 extern void
 smie_debug_dump_grammar (smie_grammar_t *grammar);
 #endif
@@ -35,7 +35,7 @@ smie_debug_dump_grammar (smie_grammar_t *grammar);
 static smie_bnf_grammar_t *
 populate_bnf_grammar (smie_symbol_pool_t *pool)
 {
-  smie_bnf_grammar_t *grammar = smie_bnf_grammar_alloc (pool);
+  smie_bnf_grammar_t *bnf = smie_bnf_grammar_alloc (pool);
   GList *rule;
 
 #define NT(x)							\
@@ -49,69 +49,69 @@ populate_bnf_grammar (smie_symbol_pool_t *pool)
 
   rule = CONS (NT ("s"),
 	       CONS (T ("#"), CONS (NT ("e"), CONS (T ("#"), NULL))));
-  smie_bnf_grammar_add_rule (grammar, rule);
+  smie_bnf_grammar_add_rule (bnf, rule);
 
   rule = CONS (NT ("e"),
 	       CONS (NT ("e"), CONS (T ("+"), CONS (NT ("t"), NULL))));
-  smie_bnf_grammar_add_rule (grammar, rule);
+  smie_bnf_grammar_add_rule (bnf, rule);
 
   rule = CONS (NT ("e"),
 	       CONS (NT ("t"), NULL));
-  smie_bnf_grammar_add_rule (grammar, rule);
+  smie_bnf_grammar_add_rule (bnf, rule);
 
   rule = CONS (NT ("t"),
 	       CONS (NT ("t"), CONS (T ("x"), CONS (NT ("f"), NULL))));
-  smie_bnf_grammar_add_rule (grammar, rule);
+  smie_bnf_grammar_add_rule (bnf, rule);
 
   rule = CONS (NT ("t"),
 	       CONS (NT ("f"), NULL));
-  smie_bnf_grammar_add_rule (grammar, rule);
+  smie_bnf_grammar_add_rule (bnf, rule);
 
   rule = CONS (NT ("f"),
 	       CONS (TV ("N"), NULL));
-  smie_bnf_grammar_add_rule (grammar, rule);
+  smie_bnf_grammar_add_rule (bnf, rule);
 
   rule = CONS (NT ("f"),
 	       CONS (T ("("), CONS (NT ("e"), CONS (T (")"), NULL))));
-  smie_bnf_grammar_add_rule (grammar, rule);
+  smie_bnf_grammar_add_rule (bnf, rule);
 
 #undef CONS
 #undef NT
 #undef T
 #undef TV
 
-  return grammar;
+  return bnf;
 }
 
 static smie_bnf_grammar_t *
 populate_bnf_grammar_from_string (smie_symbol_pool_t *pool)
 {
-  smie_bnf_grammar_t *grammar;
+  smie_bnf_grammar_t *bnf;
   GError *error;
 
   error = NULL;
-  grammar = smie_bnf_grammar_alloc (pool);
-  smie_bnf_grammar_load (grammar, "\
+  bnf = smie_bnf_grammar_alloc (pool);
+  smie_bnf_grammar_load (bnf, "\
 s: \"#\" e \"#\";\n\
 e: e \"+\" t | t;\n\
 t: t \"x\" f | f;\n\
 f: N | \"(\" e \")\";",
 			 &error);
   g_assert_no_error (error);
-  return grammar;
+  return bnf;
 }
 
 static smie_prec2_grammar_t *
 populate_prec2_grammar (smie_symbol_pool_t *pool)
 {
-  smie_prec2_grammar_t *grammar = smie_prec2_grammar_alloc (pool);
+  smie_prec2_grammar_t *prec2 = smie_prec2_grammar_alloc (pool);
 
 #define T(x)						\
   smie_symbol_intern (pool, (x), SMIE_SYMBOL_TERMINAL)
 #define TV(x)							\
   smie_symbol_intern (pool, (x), SMIE_SYMBOL_TERMINAL_VARIABLE)
 #define ADD(left,op,right)						\
-  smie_prec2_grammar_add_rule (grammar, (left), (right), SMIE_PREC2_ ## op);
+  smie_prec2_grammar_add_rule (prec2, (left), (right), SMIE_PREC2_ ## op);
 
   ADD (T ("#"), EQ, T ("#"));
   ADD (T ("#"), LT, T ("+"));
@@ -144,13 +144,13 @@ populate_prec2_grammar (smie_symbol_pool_t *pool)
   ADD (TV ("N"), GT, T ("x"));
   ADD (TV ("N"), GT, T ("#"));
 
-  smie_prec2_grammar_add_pair (grammar, "(", ")", TRUE);
+  smie_prec2_grammar_add_pair (prec2, "(", ")", TRUE);
 
 #undef ADD
 #undef T
 #undef TV
 
-  return grammar;
+  return prec2;
 }
 
 static smie_grammar_t *
@@ -163,12 +163,12 @@ populate_grammar (smie_symbol_pool_t *pool)
 #define TV(x)							\
   smie_symbol_intern (pool, (x), SMIE_SYMBOL_TERMINAL_VARIABLE)
 
-  smie_grammar_add_rule (grammar, T ("#"), 1, FALSE, 1, FALSE, FALSE);
-  smie_grammar_add_rule (grammar, T ("("), 0, TRUE, 56, FALSE, FALSE);
-  smie_grammar_add_rule (grammar, T ("+"), 23, FALSE, 12, FALSE, FALSE);
-  smie_grammar_add_rule (grammar, T ("x"), 45, FALSE, 34, FALSE, FALSE);
-  smie_grammar_add_rule (grammar, T (")"), 57, FALSE, 0, TRUE, TRUE);
-  smie_grammar_add_rule (grammar, TV ("N"), 58, FALSE, 59, FALSE, FALSE);
+  smie_grammar_add_level (grammar, T ("#"), 1, FALSE, 1, FALSE, FALSE);
+  smie_grammar_add_level (grammar, T ("("), 0, TRUE, 56, FALSE, FALSE);
+  smie_grammar_add_level (grammar, T ("+"), 23, FALSE, 12, FALSE, FALSE);
+  smie_grammar_add_level (grammar, T ("x"), 45, FALSE, 34, FALSE, FALSE);
+  smie_grammar_add_level (grammar, T (")"), 57, FALSE, 0, TRUE, TRUE);
+  smie_grammar_add_level (grammar, TV ("N"), 58, FALSE, 59, FALSE, FALSE);
 
 #undef T
 #undef TV
@@ -181,7 +181,7 @@ struct fixture
   smie_symbol_pool_t *pool;
   smie_bnf_grammar_t *bnf;
   smie_prec2_grammar_t *prec2;
-  smie_grammar_t *precs;
+  smie_grammar_t *grammar;
 };
 
 static void
@@ -241,28 +241,28 @@ test_construct_prec2 (struct fixture *fixture, gconstpointer user_data)
 }
 
 static void
-setup_precs (struct fixture *fixture, gconstpointer user_data)
+setup_grammar (struct fixture *fixture, gconstpointer user_data)
 {
   fixture->pool = smie_symbol_pool_alloc ();
   fixture->prec2 = populate_prec2_grammar (fixture->pool);
 }
 
 static void
-teardown_precs (struct fixture *fixture, gconstpointer user_data)
+teardown_grammar (struct fixture *fixture, gconstpointer user_data)
 {
   smie_symbol_pool_unref (fixture->pool);
   smie_prec2_grammar_free (fixture->prec2);
 }
 
 static void
-test_construct_precs (struct fixture *fixture, gconstpointer user_data)
+test_construct_grammar (struct fixture *fixture, gconstpointer user_data)
 {
   smie_grammar_t *expected, *actual;
   GError *error;
   expected = populate_grammar (fixture->pool);
   actual = smie_grammar_alloc (fixture->pool);
   error = NULL;
-  g_assert (smie_prec2_to_precs (fixture->prec2, actual, &error));
+  g_assert (smie_prec2_to_grammar (fixture->prec2, actual, &error));
   g_assert_no_error (error);
   g_assert (smie_test_grammar_equal (expected, actual));
   smie_grammar_free (expected);
@@ -273,14 +273,14 @@ static void
 setup_movement (struct fixture *fixture, gconstpointer user_data)
 {
   fixture->pool = smie_symbol_pool_alloc ();
-  fixture->precs = populate_grammar (fixture->pool);
+  fixture->grammar = populate_grammar (fixture->pool);
 }
 
 static void
 teardown_movement (struct fixture *fixture, gconstpointer user_data)
 {
   smie_symbol_pool_unref (fixture->pool);
-  smie_grammar_free (fixture->precs);
+  smie_grammar_free (fixture->grammar);
 }
 
 static void
@@ -291,28 +291,28 @@ test_movement_forward (struct fixture *fixture, gconstpointer user_data)
   context.input = "# ( 4 + ( 5 x 6 ) + 7 ) + 8 #";
 
   context.offset = 1;
-  smie_forward_sexp (fixture->precs,
+  smie_forward_sexp (fixture->grammar,
 		     smie_test_cursor_functions.forward_token,
 		     smie_test_cursor_functions.read_token,
 		     &context);
   g_assert_cmpint (22, ==, context.offset);
 
   context.offset = 2;
-  smie_forward_sexp (fixture->precs,
+  smie_forward_sexp (fixture->grammar,
 		     smie_test_cursor_functions.forward_token,
 		     smie_test_cursor_functions.read_token,
 		     &context);
   g_assert_cmpint (22, ==, context.offset);
 
   context.offset = 3;
-  smie_forward_sexp (fixture->precs,
+  smie_forward_sexp (fixture->grammar,
 		     smie_test_cursor_functions.forward_token,
 		     smie_test_cursor_functions.read_token,
 		     &context);
   g_assert_cmpint (6, ==, context.offset);
 
   context.offset = 7;
-  smie_forward_sexp (fixture->precs,
+  smie_forward_sexp (fixture->grammar,
 		     smie_test_cursor_functions.forward_token,
 		     smie_test_cursor_functions.read_token,
 		     &context);
@@ -327,27 +327,27 @@ test_movement_backward (struct fixture *fixture, gconstpointer user_data)
   context.input = "# ( 4 + ( 5 x 6 ) + 7 ) + 8 #";
 
   context.offset = 23;
-  smie_backward_sexp (fixture->precs,
+  smie_backward_sexp (fixture->grammar,
 		      smie_test_cursor_functions.backward_token,
 		      smie_test_cursor_functions.read_token,
 		      &context);
   g_assert_cmpint (2, ==, context.offset);
 
   context.offset = 22;
-  smie_backward_sexp (fixture->precs,
+  smie_backward_sexp (fixture->grammar,
 		      smie_test_cursor_functions.backward_token,
 		      smie_test_cursor_functions.read_token,
 		      &context);
   g_assert_cmpint (2, ==, context.offset);
 
   context.offset = 17;
-  smie_backward_sexp (fixture->precs,
+  smie_backward_sexp (fixture->grammar,
 		      smie_test_cursor_functions.backward_token,
 		      smie_test_cursor_functions.read_token, &context);
   g_assert_cmpint (8, ==, context.offset);
 
   context.offset = 7;
-  smie_backward_sexp (fixture->precs,
+  smie_backward_sexp (fixture->grammar,
 		      smie_test_cursor_functions.backward_token,
 		      smie_test_cursor_functions.read_token,
 		      &context);
@@ -366,10 +366,10 @@ main (int argc, char **argv)
 	      setup_prec2,
 	      test_construct_prec2,
 	      teardown_prec2);
-  g_test_add ("/grammar/construct/precs", struct fixture, NULL,
-	      setup_precs,
-	      test_construct_precs,
-	      teardown_precs);
+  g_test_add ("/grammar/construct/grammar", struct fixture, NULL,
+	      setup_grammar,
+	      test_construct_grammar,
+	      teardown_grammar);
   g_test_add ("/grammar/movement/forward", struct fixture, NULL,
 	      setup_movement,
 	      test_movement_forward,

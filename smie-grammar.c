@@ -155,14 +155,14 @@ smie_bnf_grammar_free (struct smie_bnf_grammar_t *bnf)
 }
 
 gboolean
-smie_bnf_grammar_load (struct smie_bnf_grammar_t *grammar,
+smie_bnf_grammar_load (struct smie_bnf_grammar_t *bnf,
 		       const gchar *input,
 		       GError **error)
 {
   const gchar *cp = input;
-  if (yyparse (grammar, &cp, error) != 0)
+  if (yyparse (bnf, &cp, error) != 0)
     {
-      smie_bnf_grammar_free (grammar);
+      smie_bnf_grammar_free (bnf);
       return FALSE;
     }
   return TRUE;
@@ -245,36 +245,40 @@ smie_prec2_grammar_alloc (struct smie_symbol_pool_t *pool)
 }
 
 void
-smie_prec2_grammar_free (struct smie_prec2_grammar_t *grammar)
+smie_prec2_grammar_free (struct smie_prec2_grammar_t *prec2)
 {
-  smie_symbol_pool_unref (grammar->pool);
-  g_hash_table_unref (grammar->prec2);
-  g_hash_table_unref (grammar->first);
-  g_hash_table_unref (grammar->last);
-  g_hash_table_unref (grammar->closer);
-  g_hash_table_unref (grammar->opener_closer);
-  g_free (grammar);
+  smie_symbol_pool_unref (prec2->pool);
+  g_hash_table_unref (prec2->prec2);
+  g_hash_table_unref (prec2->first);
+  g_hash_table_unref (prec2->last);
+  g_hash_table_unref (prec2->closer);
+  g_hash_table_unref (prec2->opener_closer);
+  g_free (prec2);
 }
 
 gboolean
-smie_prec2_grammar_add_rule (struct smie_prec2_grammar_t *grammar,
-			     const struct smie_symbol_t *a,
-			     const struct smie_symbol_t *b,
+smie_prec2_grammar_add_rule (struct smie_prec2_grammar_t *prec2,
+			     const struct smie_symbol_t *left,
+			     const struct smie_symbol_t *right,
 			     enum smie_prec2_type_t type)
 {
-  struct smie_prec2_t *prec2 = smie_prec2_alloc (a, b);
+  struct smie_prec2_t p2;
   gpointer value;
 
-  if (g_hash_table_lookup_extended (grammar->prec2, prec2, NULL, &value)
+  p2.left = left;
+  p2.right = right;
+  if (g_hash_table_lookup_extended (prec2->prec2, &p2, NULL, &value)
       && GPOINTER_TO_INT (value) != type)
     return FALSE;
 
-  g_hash_table_insert (grammar->prec2, prec2, GINT_TO_POINTER (type));
+  g_hash_table_insert (prec2->prec2,
+		       g_memdup (&p2, sizeof (struct smie_prec2_t)),
+		       GINT_TO_POINTER (type));
   return TRUE;
 }
 
 static gboolean
-smie_prec2_grammar_add_pair_symbol (struct smie_prec2_grammar_t *grammar,
+smie_prec2_grammar_add_pair_symbol (struct smie_prec2_grammar_t *prec2,
 				    const struct smie_symbol_t *opener_symbol,
 				    const struct smie_symbol_t *closer_symbol,
 				    gboolean is_last)
@@ -283,23 +287,23 @@ smie_prec2_grammar_add_pair_symbol (struct smie_prec2_grammar_t *grammar,
   p2.left = opener_symbol;
   p2.right = closer_symbol;
 
-  g_return_val_if_fail (!g_hash_table_contains (grammar->first, closer_symbol),
+  g_return_val_if_fail (!g_hash_table_contains (prec2->first, closer_symbol),
 			FALSE);
 
-  if (g_hash_table_contains (grammar->opener_closer, &p2))
+  if (g_hash_table_contains (prec2->opener_closer, &p2))
     return FALSE;
 
-  g_hash_table_add (grammar->first, (gpointer) opener_symbol);
-  g_hash_table_add (grammar->closer, (gpointer) closer_symbol);
+  g_hash_table_add (prec2->first, (gpointer) opener_symbol);
+  g_hash_table_add (prec2->closer, (gpointer) closer_symbol);
   if (is_last)
-    g_hash_table_add (grammar->last, (gpointer) closer_symbol);
+    g_hash_table_add (prec2->last, (gpointer) closer_symbol);
 
-  return g_hash_table_add (grammar->opener_closer,
+  return g_hash_table_add (prec2->opener_closer,
 			   g_memdup (&p2, sizeof (struct smie_prec2_t)));
 }
 
 gboolean
-smie_prec2_grammar_add_pair (struct smie_prec2_grammar_t *grammar,
+smie_prec2_grammar_add_pair (struct smie_prec2_grammar_t *prec2,
 			     const gchar *opener_token,
 			     const gchar *closer_token,
 			     gboolean is_last)
@@ -307,12 +311,12 @@ smie_prec2_grammar_add_pair (struct smie_prec2_grammar_t *grammar,
   const struct smie_symbol_t *opener_symbol, *closer_symbol;
 
   opener_symbol
-    = smie_symbol_intern (grammar->pool, opener_token, SMIE_SYMBOL_TERMINAL);
+    = smie_symbol_intern (prec2->pool, opener_token, SMIE_SYMBOL_TERMINAL);
 
   closer_symbol
-    = smie_symbol_intern (grammar->pool, closer_token, SMIE_SYMBOL_TERMINAL);
+    = smie_symbol_intern (prec2->pool, closer_token, SMIE_SYMBOL_TERMINAL);
 
-  return smie_prec2_grammar_add_pair_symbol (grammar,
+  return smie_prec2_grammar_add_pair_symbol (prec2,
 					     opener_symbol,
 					     closer_symbol,
 					     is_last);
@@ -323,7 +327,7 @@ smie_grammar_alloc (struct smie_symbol_pool_t *pool)
 {
   struct smie_grammar_t *result = g_new0 (struct smie_grammar_t, 1);
   result->pool = smie_symbol_pool_ref (pool);
-  result->precs = g_hash_table_new_full (smie_symbol_hash,
+  result->levels = g_hash_table_new_full (smie_symbol_hash,
 					 smie_symbol_equal,
 					 NULL,
 					 g_free);
@@ -334,7 +338,7 @@ void
 smie_grammar_free (struct smie_grammar_t *grammar)
 {
   smie_symbol_pool_unref (grammar->pool);
-  g_hash_table_unref (grammar->precs);
+  g_hash_table_unref (grammar->levels);
   if (grammar->opener_closer)
     g_hash_table_unref (grammar->opener_closer);
   g_free (grammar);
@@ -595,11 +599,11 @@ smie_bnf_to_prec2 (struct smie_bnf_grammar_t *bnf,
 
 #ifdef DEBUG
 void
-smie_debug_dump_prec2_grammar (struct smie_prec2_grammar_t *grammar)
+smie_debug_dump_prec2_grammar (struct smie_prec2_grammar_t *prec2)
 {
   GHashTableIter iter;
   gpointer key, value;
-  g_hash_table_iter_init (&iter, grammar->prec2);
+  g_hash_table_iter_init (&iter, prec2->prec2);
   while (g_hash_table_iter_next (&iter, &key, &value))
     {
       struct smie_prec2_t *prec2 = key;
@@ -698,11 +702,11 @@ smie_debug_dump_grammar (struct smie_grammar_t *grammar)
   GHashTableIter iter;
   gpointer key, value;
 
-  g_hash_table_iter_init (&iter, grammar->precs);
+  g_hash_table_iter_init (&iter, grammar->levels);
   while (g_hash_table_iter_next (&iter, &key, &value))
     {
       struct smie_symbol_t *symbol = key;
-      struct smie_prec_t *prec = value;
+      struct smie_level_t *level = value;
       g_printf ("f(%s) = %d\n", symbol->name, prec->left_prec);
       g_printf ("g(%s) = %d\n", symbol->name, prec->right_prec);
     }
@@ -734,8 +738,8 @@ smie_func2_equal (gconstpointer a, gconstpointer b)
 }
 
 gboolean
-smie_prec2_to_precs (struct smie_prec2_grammar_t *prec2,
-		     struct smie_grammar_t *precs,
+smie_prec2_to_grammar (struct smie_prec2_grammar_t *prec2,
+		     struct smie_grammar_t *grammar,
 		     GError **error)
 {
   GHashTable *allocated = g_hash_table_new_full (smie_func_hash,
@@ -759,7 +763,7 @@ smie_prec2_to_precs (struct smie_prec2_grammar_t *prec2,
   gboolean result = TRUE;
 
   /* Allocate all possible functions.  */
-  g_hash_table_iter_init (&iter, precs->pool->allocated);
+  g_hash_table_iter_init (&iter, grammar->pool->allocated);
   while (g_hash_table_iter_next (&iter, &key, NULL))
     {
       struct smie_symbol_t *symbol = key;
@@ -770,11 +774,11 @@ smie_prec2_to_precs (struct smie_prec2_grammar_t *prec2,
 	  func = g_new0 (struct smie_func_t, 1);
 	  func->symbol = key;
 	  func->type = SMIE_FUNC_F;
-	  g_hash_table_insert (allocated, func, g_new0 (struct smie_prec_t, 1));
+	  g_hash_table_insert (allocated, func, g_new0 (struct smie_level_t, 1));
 	  func = g_new0 (struct smie_func_t, 1);
 	  func->symbol = key;
 	  func->type = SMIE_FUNC_G;
-	  g_hash_table_insert (allocated, func, g_new0 (struct smie_prec_t, 1));
+	  g_hash_table_insert (allocated, func, g_new0 (struct smie_level_t, 1));
 	}
     }
 
@@ -957,33 +961,33 @@ smie_prec2_to_precs (struct smie_prec2_grammar_t *prec2,
   while (g_hash_table_iter_next (&iter, &key, &value))
     {
       struct smie_func_t *func = key;
-      struct smie_prec_t *prec
-	= g_hash_table_lookup (precs->precs, (gpointer) func->symbol);
-      if (!prec)
+      struct smie_level_t *level
+	= g_hash_table_lookup (grammar->levels, (gpointer) func->symbol);
+      if (!level)
 	{
-	  prec = g_new0 (struct smie_prec_t, 1);
-	  prec->is_first
+	  level = g_new0 (struct smie_level_t, 1);
+	  level->is_first
 	    = g_hash_table_contains (prec2->first,
 				     (gpointer) func->symbol);
-	  prec->is_last
+	  level->is_last
 	    = g_hash_table_contains (prec2->last,
 				     (gpointer) func->symbol);
-	  prec->is_closer
+	  level->is_closer
 	    = g_hash_table_contains (prec2->closer,
 				     (gpointer) func->symbol);
-	  g_hash_table_insert (precs->precs, (gpointer) func->symbol, prec);
+	  g_hash_table_insert (grammar->levels, (gpointer) func->symbol, level);
 	}
       switch (func->type)
 	{
 	case SMIE_FUNC_F:
-	  prec->left_prec = GPOINTER_TO_INT (value);
+	  level->left_prec = GPOINTER_TO_INT (value);
 	  break;
 	case SMIE_FUNC_G:
-	  prec->right_prec = GPOINTER_TO_INT (value);
+	  level->right_prec = GPOINTER_TO_INT (value);
 	  break;
 	}
     }
-  precs->opener_closer = g_hash_table_ref (prec2->opener_closer);
+  grammar->opener_closer = g_hash_table_ref (prec2->opener_closer);
  out:
   g_hash_table_unref (assigned);
   g_hash_table_unref (allocated);
@@ -991,23 +995,21 @@ smie_prec2_to_precs (struct smie_prec2_grammar_t *prec2,
 }
 
 gboolean
-smie_grammar_add_rule (struct smie_grammar_t *grammar,
-		       const struct smie_symbol_t *symbol,
-		       gint left_prec,
-		       gboolean left_is_first,
-		       gint right_prec,
-		       gboolean right_is_last,
-		       gboolean right_is_closer)
+smie_grammar_add_level (struct smie_grammar_t *grammar,
+			const struct smie_symbol_t *symbol,
+			gint left_prec,
+			gboolean left_is_first,
+			gint right_prec,
+			gboolean right_is_last,
+			gboolean right_is_closer)
 {
-  struct smie_prec_t *prec = g_new0 (struct smie_prec_t, 1);
-  prec->left_prec = left_prec;
-  prec->is_first = left_is_first;
-  prec->right_prec = right_prec;
-  prec->is_last = right_is_last;
-  prec->is_closer = right_is_closer;
-  return g_hash_table_insert (grammar->precs,
-			      (gpointer) symbol,
-			      prec);
+  struct smie_level_t *level = g_new0 (struct smie_level_t, 1);
+  level->left_prec = left_prec;
+  level->is_first = left_is_first;
+  level->right_prec = right_prec;
+  level->is_last = right_is_last;
+  level->is_closer = right_is_closer;
+  return g_hash_table_insert (grammar->levels, (gpointer) symbol, level);
 }
 
 gboolean
@@ -1016,30 +1018,28 @@ smie_grammar_is_first (struct smie_grammar_t *grammar,
 {
   const struct smie_symbol_t *symbol
     = smie_symbol_intern (grammar->pool, token, SMIE_SYMBOL_TERMINAL);
-  struct smie_prec_t *prec
-    = g_hash_table_lookup (grammar->precs, (gpointer) symbol);
+  struct smie_level_t *prec
+    = g_hash_table_lookup (grammar->levels, (gpointer) symbol);
   return prec && prec->is_first;
 }
 
 gboolean
-smie_grammar_is_last (struct smie_grammar_t *grammar,
-		      const gchar *token)
+smie_grammar_is_last (struct smie_grammar_t *grammar, const gchar *token)
 {
   const struct smie_symbol_t *symbol
     = smie_symbol_intern (grammar->pool, token, SMIE_SYMBOL_TERMINAL);
-  struct smie_prec_t *prec
-    = g_hash_table_lookup (grammar->precs, (gpointer) symbol);
+  struct smie_level_t *prec
+    = g_hash_table_lookup (grammar->levels, (gpointer) symbol);
   return prec && prec->is_last;
 }
 
 gboolean
-smie_grammar_is_closer (struct smie_grammar_t *grammar,
-			const gchar *token)
+smie_grammar_is_closer (struct smie_grammar_t *grammar, const gchar *token)
 {
   const struct smie_symbol_t *symbol
     = smie_symbol_intern (grammar->pool, token, SMIE_SYMBOL_TERMINAL);
-  struct smie_prec_t *prec
-    = g_hash_table_lookup (grammar->precs, (gpointer) symbol);
+  struct smie_level_t *prec
+    = g_hash_table_lookup (grammar->levels, (gpointer) symbol);
   return prec && prec->is_closer;
 }
 
@@ -1065,17 +1065,17 @@ smie_grammar_is_pair (smie_grammar_t *grammar,
     }
 }
 
-typedef gboolean (*smie_select_function_t) (struct smie_prec_t *, gint *);
+typedef gboolean (*smie_select_function_t) (struct smie_level_t *, gint *);
 
 static gboolean
-smie_select_left (struct smie_prec_t *prec, gint *precp)
+smie_select_left (struct smie_level_t *prec, gint *precp)
 {
   *precp = prec->left_prec;
   return prec->is_first;
 }
 
 static gboolean
-smie_select_right (struct smie_prec_t *prec, gint *precp)
+smie_select_right (struct smie_level_t *prec, gint *precp)
 {
   *precp = prec->right_prec;
   return prec->is_last;
@@ -1098,7 +1098,7 @@ smie_next_sexp (struct smie_grammar_t *grammar,
   do
     {
       struct smie_symbol_t symbol;
-      struct smie_prec_t *prec;
+      struct smie_level_t *prec;
       gint prec_value;
       gchar *token;
 
@@ -1107,7 +1107,7 @@ smie_next_sexp (struct smie_grammar_t *grammar,
 
       symbol.name = token;
       symbol.type = SMIE_SYMBOL_TERMINAL;
-      prec = g_hash_table_lookup (grammar->precs, &symbol);
+      prec = g_hash_table_lookup (grammar->levels, &symbol);
       g_free (token);
       if (!prec)
 	continue;
@@ -1117,7 +1117,7 @@ smie_next_sexp (struct smie_grammar_t *grammar,
 	{
 	  while (stack)
 	    {
-	      struct smie_prec_t *prec2 = stack->data;
+	      struct smie_level_t *prec2 = stack->data;
 	      gint prec_value2;
 	      op_forward (prec, &prec_value);
 	      op_backward (prec2, &prec_value2);
@@ -1129,7 +1129,7 @@ smie_next_sexp (struct smie_grammar_t *grammar,
 	    return TRUE;
 	  else
 	    {
-	      struct smie_prec_t *prec2 = stack->data;
+	      struct smie_level_t *prec2 = stack->data;
 	      gint prec_value2;
 	      op_forward (prec, &prec_value);
 	      op_backward (prec2, &prec_value2);

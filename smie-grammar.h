@@ -61,21 +61,21 @@ enum smie_error_code_t
   };
 
 smie_bnf_grammar_t *smie_bnf_grammar_alloc (smie_symbol_pool_t *pool);
-void smie_bnf_grammar_free (smie_bnf_grammar_t *grammar);
+void smie_bnf_grammar_free (smie_bnf_grammar_t *bnf);
 
-gboolean smie_bnf_grammar_load (smie_bnf_grammar_t *grammar,
+gboolean smie_bnf_grammar_load (smie_bnf_grammar_t *bnf,
 				const gchar *input,
 				GError **error);
-gboolean smie_bnf_grammar_add_rule (smie_bnf_grammar_t *grammar,
+gboolean smie_bnf_grammar_add_rule (smie_bnf_grammar_t *bnf,
 				    GList *symbols);
 
 smie_prec2_grammar_t *smie_prec2_grammar_alloc (smie_symbol_pool_t *pool);
-void smie_prec2_grammar_free (smie_prec2_grammar_t *grammar);
-gboolean smie_prec2_grammar_add_rule (smie_prec2_grammar_t *grammar,
-				      const smie_symbol_t *a,
-				      const smie_symbol_t *b,
+void smie_prec2_grammar_free (smie_prec2_grammar_t *prec2);
+gboolean smie_prec2_grammar_add_rule (smie_prec2_grammar_t *prec2,
+				      const smie_symbol_t *left,
+				      const smie_symbol_t *right,
 				      smie_prec2_type_t type);
-gboolean smie_prec2_grammar_add_pair (smie_prec2_grammar_t *grammar,
+gboolean smie_prec2_grammar_add_pair (smie_prec2_grammar_t *prec2,
 				      const gchar *opener_token,
 				      const gchar *closer_token,
 				      gboolean is_last);
@@ -104,9 +104,9 @@ gboolean smie_grammar_is_pair (smie_grammar_t *grammar,
 gboolean smie_bnf_to_prec2 (smie_bnf_grammar_t *bnf,
 			    smie_prec2_grammar_t *prec2,
 			    GError **error);
-gboolean smie_prec2_to_precs (smie_prec2_grammar_t *prec2,
-			      smie_grammar_t *precs,
-			      GError **error);
+gboolean smie_prec2_to_grammar (smie_prec2_grammar_t *prec2,
+				smie_grammar_t *grammar,
+				GError **error);
 
 typedef gboolean (*smie_next_token_function_t) (gpointer, gboolean);
 typedef gboolean (*smie_read_token_function_t) (gpointer, gchar **);
