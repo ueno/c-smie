@@ -1195,17 +1195,26 @@ smie_grammar_is_pair (smie_grammar_t *grammar,
 typedef gboolean (*smie_select_function_t) (struct smie_level_t *, gint *);
 
 static gboolean
-smie_select_left (struct smie_level_t *prec, gint *precp)
+smie_select_left (struct smie_level_t *level, gint *precp)
 {
-  *precp = prec->left_prec;
-  return prec->is_first;
+  *precp = level->left_prec;
+  return level->is_first;
 }
 
 static gboolean
-smie_select_right (struct smie_level_t *prec, gint *precp)
+smie_select_right (struct smie_level_t *level, gint *precp)
 {
-  *precp = prec->right_prec;
-  return prec->is_last;
+  *precp = level->right_prec;
+  return level->is_last;
+}
+
+static gboolean
+smie_is_associative (struct smie_level_t *level)
+{
+  gint prec_value, prec_value2;
+  smie_select_left (level, &prec_value);
+  smie_select_right (level, &prec_value2);
+  return prec_value == prec_value2;
 }
 
 static gboolean
@@ -1225,7 +1234,7 @@ smie_next_sexp (struct smie_grammar_t *grammar,
   do
     {
       struct smie_symbol_t symbol;
-      struct smie_level_t *prec;
+      struct smie_level_t *level;
       gint prec_value;
       gchar *token;
 
@@ -1234,20 +1243,20 @@ smie_next_sexp (struct smie_grammar_t *grammar,
 
       symbol.name = token;
       symbol.type = SMIE_SYMBOL_TERMINAL;
-      prec = g_hash_table_lookup (grammar->levels, &symbol);
+      level = g_hash_table_lookup (grammar->levels, &symbol);
       g_free (token);
-      if (!prec)
+      if (!level)
 	continue;
-      else if (op_backward (prec, &prec_value))
-	stack = g_list_prepend (stack, prec);
+      else if (op_backward (level, &prec_value))
+	stack = g_list_prepend (stack, level);
       else
 	{
 	  while (stack)
 	    {
-	      struct smie_level_t *prec2 = stack->data;
+	      struct smie_level_t *level2 = stack->data;
 	      gint prec_value2;
-	      op_forward (prec, &prec_value);
-	      op_backward (prec2, &prec_value2);
+	      op_forward (level, &prec_value);
+	      op_backward (level2, &prec_value2);
 	      if (prec_value >= prec_value2)
 		break;
 	      stack = g_list_delete_link (stack, stack);
@@ -1256,19 +1265,25 @@ smie_next_sexp (struct smie_grammar_t *grammar,
 	    return TRUE;
 	  else
 	    {
-	      struct smie_level_t *prec2 = stack->data;
+	      struct smie_level_t *level2 = stack->data;
 	      gint prec_value2;
-	      op_forward (prec, &prec_value);
-	      op_backward (prec2, &prec_value2);
+	      op_forward (level, &prec_value);
+	      op_backward (level2, &prec_value2);
 	      if (prec_value == prec_value2)
 		stack = g_list_delete_link (stack, stack);
 	      if (stack)
 		{
-		  if (!op_forward (prec, &prec_value))
-		    stack = g_list_prepend (stack, prec);
+		  if (!op_forward (level, &prec_value))
+		    stack = g_list_prepend (stack, level);
 		}
-	      else if (op_forward (prec, &prec_value))
+	      else if (op_forward (level, &prec_value))
 		goto out;
+	      else if (!smie_is_associative (level))
+		stack = g_list_prepend (NULL, level);
+	      else if (smie_is_associative (level2))
+		return TRUE;
+	      else
+		stack = g_list_prepend (NULL, level2);
 	    }
 	}
     }
