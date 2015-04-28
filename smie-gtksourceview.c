@@ -75,6 +75,40 @@ smie_gtk_source_buffer_backward_line (gpointer data)
 }
 
 static gboolean
+smie_gtk_source_buffer_forward_comment (gpointer data)
+{
+  struct smie_gtk_source_buffer_context_t *context = data;
+  GtkTextIter start_iter;
+
+  gtk_text_iter_assign (&start_iter, &context->iter);
+  while (!gtk_text_iter_is_end (&context->iter)
+	 && (gtk_source_buffer_iter_has_context_class (context->buffer,
+						       &context->iter,
+						       "comment")
+	     || g_unichar_isspace (gtk_text_iter_get_char (&context->iter)))
+	 && gtk_text_iter_forward_char (&context->iter))
+    ;
+  return !gtk_text_iter_equal (&context->iter, &start_iter);
+}
+
+static gboolean
+smie_gtk_source_buffer_backward_comment (gpointer data)
+{
+  struct smie_gtk_source_buffer_context_t *context = data;
+  GtkTextIter end_iter;
+
+  gtk_text_iter_assign (&end_iter, &context->iter);
+  while (!gtk_text_iter_is_start (&context->iter)
+	 && (gtk_source_buffer_iter_has_context_class (context->buffer,
+						       &context->iter,
+						       "comment")
+	     || g_unichar_isspace (gtk_text_iter_get_char (&context->iter)))
+	 && gtk_text_iter_backward_char (&context->iter))
+    ;
+  return !gtk_text_iter_equal (&context->iter, &end_iter);
+}
+
+static gboolean
 smie_gtk_source_buffer_forward_token (gpointer data, gboolean move_lines)
 {
   struct smie_gtk_source_buffer_context_t *context = data;
@@ -343,6 +377,8 @@ smie_cursor_functions_t smie_gtk_source_buffer_cursor_functions =
     smie_gtk_source_buffer_backward_line,
     smie_gtk_source_buffer_forward_to_line_end,
     smie_gtk_source_buffer_backward_to_line_start,
+    smie_gtk_source_buffer_forward_comment,
+    smie_gtk_source_buffer_backward_comment,
     smie_gtk_source_buffer_forward_token,
     smie_gtk_source_buffer_backward_token,
     smie_gtk_source_buffer_is_start,

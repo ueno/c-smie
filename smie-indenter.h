@@ -35,6 +35,8 @@ struct smie_cursor_functions_t
   gboolean (* backward_line) (gpointer);
   gboolean (* forward_to_line_end) (gpointer);
   gboolean (* backward_to_line_start) (gpointer);
+  gboolean (* forward_comment) (gpointer);
+  gboolean (* backward_comment) (gpointer);
   gboolean (* forward_token) (gpointer, gboolean);
   gboolean (* backward_token) (gpointer, gboolean);
   gboolean (* is_start) (gpointer);

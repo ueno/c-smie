@@ -104,7 +104,7 @@ smie_indenter_calculate (struct smie_indenter_t *indenter,
 
   /* If the cursor is on the first line, return 0.  */
   indenter->functions->push_context (context);
-  indenter->functions->backward_to_line_start (context);
+  indenter->functions->backward_comment (context);
   result = indenter->functions->is_start (context);
   indenter->functions->pop_context (context);
   if (result)

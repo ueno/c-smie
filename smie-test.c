@@ -243,6 +243,30 @@ smie_test_backward_line (gpointer data)
 }
 
 static gboolean
+smie_test_forward_comment (gpointer data)
+{
+  struct smie_test_context_t *context = data;
+  goffset offset = context->offset;
+  while (context->input[context->offset] != '\0'
+	 && context->input[context->offset] != '\n'
+	 && g_ascii_isspace (context->input[context->offset]))
+    context->offset++;
+  return offset != context->offset;
+}
+
+static gboolean
+smie_test_backward_comment (gpointer data)
+{
+  struct smie_test_context_t *context = data;
+  goffset offset = context->offset;
+  while (context->offset > 0
+	 && context->input[context->offset] != '\n'
+	 && g_ascii_isspace (context->input[context->offset]))
+    context->offset--;
+  return offset != context->offset;
+}
+
+static gboolean
 smie_test_forward_token (gpointer data, gboolean move_lines)
 {
   struct smie_test_context_t *context = data;
@@ -359,6 +383,8 @@ smie_cursor_functions_t smie_test_cursor_functions =
     smie_test_backward_line,
     smie_test_forward_to_line_end,
     smie_test_backward_to_line_start,
+    smie_test_forward_comment,
+    smie_test_backward_comment,
     smie_test_forward_token,
     smie_test_backward_token,
     smie_test_is_start,
