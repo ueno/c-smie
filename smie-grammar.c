@@ -225,10 +225,10 @@ smie_prec2_grammar_alloc (struct smie_symbol_pool_t *pool)
 					 g_free,
 					 NULL);
   result->classes = g_hash_table_new (smie_symbol_hash, smie_symbol_equal);
-  result->opener_closer = g_hash_table_new_full (smie_prec2_hash,
-						 smie_prec2_equal,
-						 g_free,
-						 NULL);
+  result->pairs = g_hash_table_new_full (smie_prec2_hash,
+					 smie_prec2_equal,
+					 g_free,
+					 NULL);
   return result;
 }
 
@@ -238,7 +238,7 @@ smie_prec2_grammar_free (struct smie_prec2_grammar_t *prec2)
   smie_symbol_pool_unref (prec2->pool);
   g_hash_table_unref (prec2->prec2);
   g_hash_table_unref (prec2->classes);
-  g_hash_table_unref (prec2->opener_closer);
+  g_hash_table_unref (prec2->pairs);
   g_free (prec2);
 }
 
@@ -283,10 +283,10 @@ smie_prec2_grammar_add_pair (struct smie_prec2_grammar_t *prec2,
 
   p2.left = opener_symbol;
   p2.right = closer_symbol;
-  if (g_hash_table_contains (prec2->opener_closer, &p2))
+  if (g_hash_table_contains (prec2->pairs, &p2))
     return FALSE;
 
-  return g_hash_table_add (prec2->opener_closer,
+  return g_hash_table_add (prec2->pairs,
 			   g_memdup (&p2, sizeof (struct smie_prec2_t)));
 }
 
@@ -403,9 +403,9 @@ smie_grammar_alloc (struct smie_symbol_pool_t *pool)
   struct smie_grammar_t *result = g_new0 (struct smie_grammar_t, 1);
   result->pool = smie_symbol_pool_ref (pool);
   result->levels = g_hash_table_new_full (smie_symbol_hash,
-					 smie_symbol_equal,
-					 NULL,
-					 g_free);
+					  smie_symbol_equal,
+					  NULL,
+					  g_free);
   return result;
 }
 
@@ -414,8 +414,8 @@ smie_grammar_free (struct smie_grammar_t *grammar)
 {
   smie_symbol_pool_unref (grammar->pool);
   g_hash_table_unref (grammar->levels);
-  if (grammar->opener_closer)
-    g_hash_table_unref (grammar->opener_closer);
+  if (grammar->pairs)
+    g_hash_table_unref (grammar->pairs);
   g_free (grammar);
 }
 
@@ -853,8 +853,8 @@ smie_func2_equal (gconstpointer a, gconstpointer b)
 
 gboolean
 smie_prec2_to_grammar (struct smie_prec2_grammar_t *prec2,
-		     struct smie_grammar_t *grammar,
-		     GError **error)
+		       struct smie_grammar_t *grammar,
+		       GError **error)
 {
   GHashTable *allocated = g_hash_table_new_full (smie_func_hash,
 						 smie_func_equal,
@@ -1098,7 +1098,7 @@ smie_prec2_to_grammar (struct smie_prec2_grammar_t *prec2,
 	  break;
 	}
     }
-  grammar->opener_closer = g_hash_table_ref (prec2->opener_closer);
+  grammar->pairs = g_hash_table_ref (prec2->pairs);
  out:
   g_hash_table_unref (assigned);
   g_hash_table_unref (allocated);
@@ -1143,13 +1143,13 @@ smie_grammar_has_pair (smie_grammar_t *grammar,
 		       const struct smie_symbol_t *closer_symbol)
 {
   struct smie_prec2_t p2;
-  if (!grammar->opener_closer)
+  if (!grammar->pairs)
     return FALSE;
   else
     {
       p2.left = opener_symbol;
       p2.right = closer_symbol;
-      return g_hash_table_contains (grammar->opener_closer, &p2);
+      return g_hash_table_contains (grammar->pairs, &p2);
     }
 }
 

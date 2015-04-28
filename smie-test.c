@@ -133,9 +133,9 @@ smie_test_prec2_grammar_equal (struct smie_prec2_grammar_t *a,
 	      || value != value1)
 	    return FALSE;
 	}
-      g_hash_table_iter_init (&iter, permutations[i].from->opener_closer);
+      g_hash_table_iter_init (&iter, permutations[i].from->pairs);
       while (g_hash_table_iter_next (&iter, &key, &value))
-	if (!g_hash_table_contains (permutations[i].to->opener_closer, key))
+	if (!g_hash_table_contains (permutations[i].to->pairs, key))
 	  return FALSE;
     }
   return TRUE;
@@ -168,7 +168,7 @@ smie_test_grammar_equal (struct smie_grammar_t *a,
 	    return FALSE;
 	}
 
-      /* FIXME: Check opener_closer.  */
+      /* FIXME: Check pairs.  */
     }
   return TRUE;
 }

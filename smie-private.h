@@ -61,7 +61,7 @@ struct smie_prec2_grammar_t
   struct smie_symbol_pool_t *pool;
   GHashTable *prec2;
   GHashTable *classes;
-  GHashTable *opener_closer;
+  GHashTable *pairs;
 };
 
 struct smie_prec_t
@@ -105,7 +105,7 @@ struct smie_grammar_t
 {
   struct smie_symbol_pool_t *pool;
   GHashTable *levels;
-  GHashTable *opener_closer;
+  GHashTable *pairs;
 };
 
 G_END_DECLS
