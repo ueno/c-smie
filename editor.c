@@ -271,20 +271,25 @@ editor_application_window_key_press_event (GtkWidget *widget,
 	current_indent++;
 
       /* Replace the current indent if it doesn't match the computed one.  */
-      if (indent != current_indent)
+      if (indent < current_indent)
 	{
+	  while (indent < current_indent)
+	    {
+	      gtk_text_iter_backward_char (&end_iter);
+	      indent--;
+	    }
 	  gtk_text_buffer_delete (GTK_TEXT_BUFFER (window->buffer),
 				  &start_iter, &end_iter);
-	  if (indent > 0)
-	    {
-	      gchar *text = g_new0 (gchar, indent);
-	      memset (text, ' ', indent * sizeof (gchar));
-	      gtk_text_buffer_insert (GTK_TEXT_BUFFER (window->buffer),
-				      &start_iter,
-				      text,
-				      indent);
-	      g_free (text);
-	    }
+	}
+      else if (indent > current_indent)
+	{
+	  gchar *text = g_new0 (gchar, indent - current_indent);
+	  memset (text, ' ', indent * sizeof (gchar));
+	  gtk_text_buffer_insert (GTK_TEXT_BUFFER (window->buffer),
+				  &start_iter,
+				  text,
+				  indent - current_indent);
+	  g_free (text);
 	}
       return TRUE;
     }
