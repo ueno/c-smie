@@ -215,16 +215,6 @@ smie_prec2_equal (gconstpointer a, gconstpointer b)
     && smie_symbol_equal (ap->right, bp->right);
 }
 
-static struct smie_prec2_t *
-smie_prec2_alloc (const struct smie_symbol_t *left,
-		  const struct smie_symbol_t *right)
-{
-  struct smie_prec2_t *result = g_new0 (struct smie_prec2_t, 1);
-  result->left = left;
-  result->right = right;
-  return result;
-}
-
 struct smie_prec2_grammar_t *
 smie_prec2_grammar_alloc (struct smie_symbol_pool_t *pool)
 {
