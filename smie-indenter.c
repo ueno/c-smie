@@ -92,23 +92,33 @@ smie_indenter_calculate_bol_column (struct smie_indenter_t *indenter,
   return column;
 }
 
-gint
-smie_indenter_calculate (struct smie_indenter_t *indenter,
-			 gpointer context)
-{
-  gchar *token;
-  gboolean result;
-  const smie_symbol_t *symbol;
-  smie_symbol_class_t symbol_class;
-  smie_symbol_pool_t *pool;
+typedef gint (* smie_indent_function_t) (struct smie_indenter_t *, gpointer);
 
-  /* If the cursor is on the first line, return 0.  */
+static gint
+smie_indent_bob (struct smie_indenter_t *indenter,
+		 gpointer context)
+{
+  gboolean result;
+
   indenter->functions->push_context (context);
   indenter->functions->backward_comment (context);
   result = indenter->functions->is_start (context);
   indenter->functions->pop_context (context);
   if (result)
     return 0;
+
+  return -1;
+}
+
+static gint
+smie_indent_keyword (struct smie_indenter_t *indenter,
+		     gpointer context)
+{
+  gchar *token;
+  gboolean result;
+  const smie_symbol_t *symbol;
+  smie_symbol_class_t symbol_class;
+  smie_symbol_pool_t *pool;
 
   /* If the line starts with a closer, move backward to the the
      matching opener and use the indentation.  */
@@ -168,4 +178,24 @@ smie_indenter_calculate (struct smie_indenter_t *indenter,
   /* Otherwise increment the indentation by indenter->step.  */
   return indenter->step
     + smie_indenter_calculate_bol_column (indenter, context);
+}
+
+static smie_indent_function_t functions[] =
+  {
+    smie_indent_bob,
+    smie_indent_keyword
+  };
+
+gint
+smie_indenter_calculate (struct smie_indenter_t *indenter,
+			 gpointer context)
+{
+  gint i;
+  for (i = 0; i < G_N_ELEMENTS (functions); i++)
+    {
+      gint indent = functions[i] (indenter, context);
+      if (indent >= 0)
+	return indent;
+    }
+  return -1;
 }
