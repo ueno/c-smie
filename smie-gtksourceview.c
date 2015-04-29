@@ -113,9 +113,7 @@ smie_gtk_source_buffer_forward_token (gpointer data, gboolean move_lines)
 {
   struct smie_gtk_source_buffer_context_t *context = data;
 
-  /* Empty buffer.  */
-  if (gtk_text_iter_is_start (&context->iter)
-      && gtk_text_iter_is_end (&context->iter))
+  if (gtk_text_iter_is_end (&context->iter))
     return FALSE;
 
   /* If ITER is on a comment or a whitespace, skip them.  */
@@ -186,9 +184,7 @@ smie_gtk_source_buffer_backward_token (gpointer data, gboolean move_lines)
 {
   struct smie_gtk_source_buffer_context_t *context = data;
 
-  /* Empty buffer.  */
-  if (gtk_text_iter_is_start (&context->iter)
-      && gtk_text_iter_is_end (&context->iter))
+  if (gtk_text_iter_is_start (&context->iter))
     return FALSE;
 
   /* If ITER is on a comment or a whitespace, skip them.  If ITER is
