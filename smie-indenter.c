@@ -120,10 +120,8 @@ smie_indenter_calculate (struct smie_indenter_t *indenter,
 
   pool = smie_grammar_get_symbol_pool (indenter->grammar);
   symbol = smie_symbol_intern (pool, token, SMIE_SYMBOL_TERMINAL);
-  symbol_class = smie_grammar_get_symbol_class (indenter->grammar, symbol);
   g_free (token);
-  if (symbol_class == SMIE_SYMBOL_CLASS_INNER
-      || symbol_class == SMIE_SYMBOL_CLASS_CLOSER)
+  if (smie_grammar_is_pair_end (indenter->grammar, symbol))
     {
       indenter->functions->push_context (context);
       if (smie_backward_sexp (indenter->grammar,

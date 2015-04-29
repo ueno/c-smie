@@ -229,6 +229,7 @@ smie_prec2_grammar_alloc (struct smie_symbol_pool_t *pool)
 					 smie_prec2_equal,
 					 g_free,
 					 NULL);
+  result->ends = g_hash_table_new (smie_symbol_hash, smie_symbol_equal);
   return result;
 }
 
@@ -239,6 +240,7 @@ smie_prec2_grammar_free (struct smie_prec2_grammar_t *prec2)
   g_hash_table_unref (prec2->prec2);
   g_hash_table_unref (prec2->classes);
   g_hash_table_unref (prec2->pairs);
+  g_hash_table_unref (prec2->ends);
   g_free (prec2);
 }
 
@@ -286,6 +288,7 @@ smie_prec2_grammar_add_pair (struct smie_prec2_grammar_t *prec2,
   if (g_hash_table_contains (prec2->pairs, &p2))
     return FALSE;
 
+  g_hash_table_add (prec2->ends, closer_symbol);
   return g_hash_table_add (prec2->pairs,
 			   g_memdup (&p2, sizeof (struct smie_prec2_t)));
 }
@@ -416,6 +419,8 @@ smie_grammar_free (struct smie_grammar_t *grammar)
   g_hash_table_unref (grammar->levels);
   if (grammar->pairs)
     g_hash_table_unref (grammar->pairs);
+  if (grammar->ends)
+    g_hash_table_unref (grammar->ends);
   g_free (grammar);
 }
 
@@ -601,16 +606,13 @@ smie_bnf_to_prec2 (struct smie_bnf_grammar_t *bnf,
 			  if (closer->type == SMIE_SYMBOL_TERMINAL
 			      || closer->type == SMIE_SYMBOL_TERMINAL_VARIABLE)
 			    {
-			      enum smie_symbol_class_t symbol_class
-				= l2->next == NULL
-				? SMIE_SYMBOL_CLASS_CLOSER
-				: SMIE_SYMBOL_CLASS_INNER;
 			      smie_prec2_grammar_add_pair (prec2,
 							   first_symbol,
 							   closer);
-			      smie_prec2_grammar_set_symbol_class (prec2,
-								   closer,
-								   symbol_class);
+			      if (!l2->next)
+				smie_prec2_grammar_set_symbol_class (prec2,
+								     closer,
+								     SMIE_SYMBOL_CLASS_CLOSER);
 			    }
 			}
 		    }
@@ -822,7 +824,7 @@ smie_debug_dump_grammar (struct smie_grammar_t *grammar)
 		symbol->name,
 		level->symbol_class == SMIE_SYMBOL_CLASS_OPENER ? "opener"
 		: level->symbol_class == SMIE_SYMBOL_CLASS_CLOSER ? "closer"
-		: level->symbol_class == SMIE_SYMBOL_CLASS_INNER ? "inner" : "neither");
+		: "neither");
     }
 }
 #endif
@@ -1099,6 +1101,7 @@ smie_prec2_to_grammar (struct smie_prec2_grammar_t *prec2,
 	}
     }
   grammar->pairs = g_hash_table_ref (prec2->pairs);
+  grammar->ends = g_hash_table_ref (prec2->ends);
  out:
   g_hash_table_unref (assigned);
   g_hash_table_unref (allocated);
@@ -1151,6 +1154,13 @@ smie_grammar_has_pair (smie_grammar_t *grammar,
       p2.right = closer_symbol;
       return g_hash_table_contains (grammar->pairs, &p2);
     }
+}
+
+gboolean
+smie_grammar_is_pair_end (smie_grammar_t *grammar,
+			  const struct smie_symbol_t *closer_symbol)
+{
+  return grammar->ends && g_hash_table_contains (grammar->ends, closer_symbol);
 }
 
 typedef gboolean (*smie_select_function_t) (struct smie_level_t *, gint *);

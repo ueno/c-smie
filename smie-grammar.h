@@ -42,8 +42,7 @@ enum smie_symbol_class_t
   {
     SMIE_SYMBOL_CLASS_NEITHER,
     SMIE_SYMBOL_CLASS_OPENER,
-    SMIE_SYMBOL_CLASS_CLOSER,
-    SMIE_SYMBOL_CLASS_INNER
+    SMIE_SYMBOL_CLASS_CLOSER
   };
 
 typedef enum smie_prec2_type_t smie_prec2_type_t;
@@ -125,6 +124,8 @@ smie_symbol_pool_t *smie_grammar_get_symbol_pool (smie_grammar_t *grammar);
 gboolean smie_grammar_has_pair (smie_grammar_t *grammar,
 				const smie_symbol_t *opener_symbol,
 				const smie_symbol_t *closer_symbol);
+gboolean smie_grammar_is_pair_end (smie_grammar_t *grammar,
+				   const smie_symbol_t *symbol);
 
 gboolean smie_bnf_to_prec2 (smie_bnf_grammar_t *bnf,
 			    smie_prec2_grammar_t *prec2,
