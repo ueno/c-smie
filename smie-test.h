@@ -35,7 +35,7 @@ struct smie_test_context_t
 {
   const gchar *input;
   goffset offset;
-  goffset saved_offset;
+  GList *stack;
 };
 
 smie_cursor_functions_t smie_test_cursor_functions;

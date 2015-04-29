@@ -246,6 +246,7 @@ editor_application_window_key_press_event (GtkWidget *widget,
       gint indent, current_indent;
       GtkTextIter iter, start_iter, end_iter;
 
+      memset (&context, 0, sizeof (smie_gtk_source_buffer_context_t));
       context.buffer = window->buffer;
       mark = gtk_text_buffer_get_insert (GTK_TEXT_BUFFER (window->buffer));
       gtk_text_buffer_get_iter_at_mark (GTK_TEXT_BUFFER (window->buffer),

@@ -359,14 +359,18 @@ static void
 smie_gtk_source_buffer_push_context (gpointer data)
 {
   struct smie_gtk_source_buffer_context_t *context = data;
-  gtk_text_iter_assign (&context->saved_iter, &context->iter);
+  context->stack = g_list_prepend (context->stack,
+				   gtk_text_iter_copy (&context->iter));
 }
 
 static void
 smie_gtk_source_buffer_pop_context (gpointer data)
 {
   struct smie_gtk_source_buffer_context_t *context = data;
-  gtk_text_iter_assign (&context->iter, &context->saved_iter);
+  g_return_if_fail (context->stack);
+  gtk_text_iter_assign (&context->iter, context->stack->data);
+  gtk_text_iter_free (context->stack->data);
+  context->stack = g_list_delete_link (context->stack, context->stack);
 }
 
 smie_cursor_functions_t smie_gtk_source_buffer_cursor_functions =

@@ -365,14 +365,17 @@ static void
 smie_test_push_context (gpointer data)
 {
   struct smie_test_context_t *context = data;
-  context->saved_offset = context->offset;
+  context->stack = g_list_prepend (context->stack,
+				   GINT_TO_POINTER (context->offset));
 }
 
 static void
 smie_test_pop_context (gpointer data)
 {
   struct smie_test_context_t *context = data;
-  context->offset = context->saved_offset;
+  g_return_if_fail (context->stack);
+  context->offset = GPOINTER_TO_INT (context->stack->data);
+  context->stack = g_list_delete_link (context->stack, context->stack);
 }
 
 smie_cursor_functions_t smie_test_cursor_functions =

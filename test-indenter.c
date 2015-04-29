@@ -106,6 +106,8 @@ test_basic (struct fixture *fixture, gconstpointer user_data)
 {
   struct smie_test_context_t context;
   gint column;
+
+  memset (&context, 0, sizeof (struct smie_test_context_t));
   context.input = fixture->input_addr;
 
   context.offset = 0;
