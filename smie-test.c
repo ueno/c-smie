@@ -328,6 +328,16 @@ smie_test_is_end (gpointer data)
   return context->input[context->offset] == '\0';
 }
 
+static gint
+smie_test_get_line_offset (gpointer data)
+{
+  struct smie_test_context_t *context = data;
+  goffset offset = context->offset;
+  while (offset > 0 && context->input[offset] != '\n')
+    offset--;
+  return context->offset - offset;
+}
+
 static gboolean
 smie_test_read_token (gpointer data, gchar **token)
 {
@@ -394,6 +404,7 @@ smie_cursor_functions_t smie_test_cursor_functions =
     smie_test_is_end,
     smie_test_starts_line,
     smie_test_ends_line,
+    smie_test_get_line_offset,
     smie_test_read_token,
     smie_test_read_char,
     smie_test_push_context,

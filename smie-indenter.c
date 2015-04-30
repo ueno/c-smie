@@ -92,7 +92,42 @@ smie_indenter_calculate_bol_column (struct smie_indenter_t *indenter,
   return column;
 }
 
+static gboolean
+smie_indent_starts_line (struct smie_indenter_t *indenter,
+			 gpointer context)
+{
+  indenter->functions->push_context (context);
+  if (indenter->functions->starts_line (context))
+    {
+      indenter->functions->pop_context (context);
+      return TRUE;
+    }
+
+  while (indenter->functions->backward_char (context)
+	 && !indenter->functions->starts_line (context))
+    {
+      gunichar uc = indenter->functions->read_char (context);
+      if (!(uc == ' ' || uc == '\t'))
+	{
+	  indenter->functions->pop_context (context);
+	  return FALSE;
+	}
+    }
+
+  indenter->functions->pop_context (context);
+  return TRUE;
+}
+
 typedef gint (* smie_indent_function_t) (struct smie_indenter_t *, gpointer);
+
+static gint
+smie_indent_virtual (struct smie_indenter_t *indenter,
+		     gpointer context)
+{
+  if (smie_indent_starts_line (indenter, context))
+    return indenter->functions->get_line_offset (context);
+  return smie_indenter_calculate (indenter, context);
+}
 
 static gint
 smie_indent_bob (struct smie_indenter_t *indenter,

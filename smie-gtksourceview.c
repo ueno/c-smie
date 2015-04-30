@@ -282,6 +282,13 @@ smie_gtk_source_buffer_ends_line (gpointer data)
   return gtk_text_iter_ends_line (&context->iter);
 }
 
+static gint
+smie_gtk_source_buffer_get_line_offset (gpointer data)
+{
+  struct smie_gtk_source_buffer_context_t *context = data;
+  return gtk_text_iter_get_line_offset (&context->iter);
+}
+
 static gboolean
 smie_gtk_source_buffer_read_token (gpointer user_data, gchar **token)
 {
@@ -385,6 +392,7 @@ smie_cursor_functions_t smie_gtk_source_buffer_cursor_functions =
     smie_gtk_source_buffer_is_end,
     smie_gtk_source_buffer_starts_line,
     smie_gtk_source_buffer_ends_line,
+    smie_gtk_source_buffer_get_line_offset,
     smie_gtk_source_buffer_read_token,
     smie_gtk_source_buffer_read_char,
     smie_gtk_source_buffer_push_context,
