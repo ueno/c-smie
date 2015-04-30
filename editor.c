@@ -255,6 +255,7 @@ editor_application_window_key_press_event (GtkWidget *widget,
       gtk_text_iter_assign (&context.iter, &iter);
       indent = smie_indenter_calculate (window->indenter, &context);
       g_printf ("%d\n", indent);
+      g_assert (indent >= 0);
 
       /* Point START_ITER to the beginning of the line.  */
       gtk_text_iter_assign (&start_iter, &iter);

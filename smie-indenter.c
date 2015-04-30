@@ -186,7 +186,12 @@ smie_indent_keyword (struct smie_indenter_t *indenter, gpointer context)
       return -1;
     }
 
-  indenter->functions->read_token (context, &parent_token);
+  if (!indenter->functions->read_token (context, &parent_token))
+    {
+      indenter->functions->pop_context (context);
+      return -1;
+    }
+
   parent_symbol = smie_symbol_intern (pool, parent_token, SMIE_SYMBOL_TERMINAL);
   g_free (parent_token);
 
