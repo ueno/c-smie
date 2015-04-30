@@ -43,6 +43,7 @@ struct smie_cursor_functions_t
   gboolean (* is_end) (gpointer);
   gboolean (* starts_line) (gpointer);
   gboolean (* ends_line) (gpointer);
+  gint (* get_offset) (gpointer);
   gint (* get_line_offset) (gpointer);
   gboolean (* read_token) (gpointer, gchar **);
   gunichar (* read_char) (gpointer);

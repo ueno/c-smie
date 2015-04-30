@@ -329,6 +329,13 @@ smie_test_is_end (gpointer data)
 }
 
 static gint
+smie_test_get_offset (gpointer data)
+{
+  struct smie_test_context_t *context = data;
+  return context->offset;
+}
+
+static gint
 smie_test_get_line_offset (gpointer data)
 {
   struct smie_test_context_t *context = data;
@@ -404,6 +411,7 @@ smie_cursor_functions_t smie_test_cursor_functions =
     smie_test_is_end,
     smie_test_starts_line,
     smie_test_ends_line,
+    smie_test_get_offset,
     smie_test_get_line_offset,
     smie_test_read_token,
     smie_test_read_char,
