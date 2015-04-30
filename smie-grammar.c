@@ -288,7 +288,7 @@ smie_prec2_grammar_add_pair (struct smie_prec2_grammar_t *prec2,
   if (g_hash_table_contains (prec2->pairs, &p2))
     return FALSE;
 
-  g_hash_table_add (prec2->ends, closer_symbol);
+  g_hash_table_add (prec2->ends, (gpointer) closer_symbol);
   return g_hash_table_add (prec2->pairs,
 			   g_memdup (&p2, sizeof (struct smie_prec2_t)));
 }
@@ -1141,7 +1141,7 @@ smie_grammar_set_symbol_class (struct smie_grammar_t *grammar,
 }
 
 gboolean
-smie_grammar_has_pair (smie_grammar_t *grammar,
+smie_grammar_has_pair (struct smie_grammar_t *grammar,
 		       const struct smie_symbol_t *opener_symbol,
 		       const struct smie_symbol_t *closer_symbol)
 {
@@ -1157,10 +1157,38 @@ smie_grammar_has_pair (smie_grammar_t *grammar,
 }
 
 gboolean
-smie_grammar_is_pair_end (smie_grammar_t *grammar,
+smie_grammar_is_pair_end (struct smie_grammar_t *grammar,
 			  const struct smie_symbol_t *closer_symbol)
 {
-  return grammar->ends && g_hash_table_contains (grammar->ends, closer_symbol);
+  return grammar->ends
+    && g_hash_table_contains (grammar->ends, (gpointer) closer_symbol);
+}
+
+gboolean
+smie_grammar_is_keyword (struct smie_grammar_t *grammar,
+			 const struct smie_symbol_t *symbol)
+{
+  return g_hash_table_contains (grammar->levels, (gpointer) symbol);
+}
+
+gint
+smie_grammar_get_left_prec (struct smie_grammar_t *grammar,
+			    const smie_symbol_t *symbol)
+{
+  struct smie_level_t *level
+    = g_hash_table_lookup (grammar->levels, (gpointer) symbol);
+  g_return_val_if_fail (level, NULL);
+  return level->left_prec;
+}
+
+gint
+smie_grammar_get_right_prec (struct smie_grammar_t *grammar,
+			     const struct smie_symbol_t *symbol)
+{
+  struct smie_level_t *level
+    = g_hash_table_lookup (grammar->levels, (gpointer) symbol);
+  g_return_val_if_fail (level, NULL);
+  return level->right_prec;
 }
 
 typedef gboolean (*smie_select_function_t) (struct smie_level_t *, gint *);

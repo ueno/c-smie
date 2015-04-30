@@ -295,6 +295,9 @@ smie_test_backward_token (gpointer data, gboolean move_lines)
 	 && (move_lines || context->input[context->offset] != '\n')
 	 && g_ascii_isspace (context->input[context->offset]))
     context->offset--;
+  while (context->offset - 1 >= 0
+	 && !g_ascii_isspace (context->input[context->offset - 1]))
+    context->offset--;
   return offset != context->offset;
 }
 

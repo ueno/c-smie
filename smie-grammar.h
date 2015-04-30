@@ -126,6 +126,12 @@ gboolean smie_grammar_has_pair (smie_grammar_t *grammar,
 				const smie_symbol_t *closer_symbol);
 gboolean smie_grammar_is_pair_end (smie_grammar_t *grammar,
 				   const smie_symbol_t *symbol);
+gboolean smie_grammar_is_keyword (smie_grammar_t *grammar,
+				  const smie_symbol_t *symbol);
+gint smie_grammar_get_left_prec (smie_grammar_t *grammar,
+				 const smie_symbol_t *symbol);
+gint smie_grammar_get_right_prec (smie_grammar_t *grammar,
+				  const smie_symbol_t *symbol);
 
 gboolean smie_bnf_to_prec2 (smie_bnf_grammar_t *bnf,
 			    smie_prec2_grammar_t *prec2,

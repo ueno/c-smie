@@ -75,23 +75,6 @@ smie_indenter_unref (struct smie_indenter_t *indenter)
     smie_indenter_free (indenter);
 }
 
-static gint
-smie_indenter_calculate_bol_column (struct smie_indenter_t *indenter,
-				    gpointer context)
-{
-  gint column = 0;
-  indenter->functions->backward_to_line_start (context);
-  do
-    {
-      gunichar uc = indenter->functions->read_char (context);
-      if (!(0x20 <= uc && uc <= 0x7F && g_ascii_isspace (uc)))
-	break;
-      column++;
-    }
-  while (indenter->functions->forward_char (context));
-  return column;
-}
-
 static gboolean
 smie_indent_starts_line (struct smie_indenter_t *indenter,
 			 gpointer context)
@@ -130,8 +113,7 @@ smie_indent_virtual (struct smie_indenter_t *indenter,
 }
 
 static gint
-smie_indent_bob (struct smie_indenter_t *indenter,
-		 gpointer context)
+smie_indent_bob (struct smie_indenter_t *indenter, gpointer context)
 {
   gboolean result;
 
@@ -146,79 +128,162 @@ smie_indent_bob (struct smie_indenter_t *indenter,
 }
 
 static gint
-smie_indent_keyword (struct smie_indenter_t *indenter,
-		     gpointer context)
+smie_indent_keyword (struct smie_indenter_t *indenter, gpointer context)
 {
-  gchar *token;
-  gboolean result;
-  const smie_symbol_t *symbol;
-  smie_symbol_class_t symbol_class;
+  gint offset = indenter->functions->get_offset (context), offset2;
+  gchar *token, *parent_token;
   smie_symbol_pool_t *pool;
+  const smie_symbol_t *symbol, *parent_symbol;
+  smie_symbol_class_t symbol_class;
+  gint left_prec, parent_left_prec;
+  gint indent;
 
-  /* If the line starts with a closer, move backward to the the
-     matching opener and use the indentation.  */
-  indenter->functions->backward_to_line_start (context);
+  indenter->functions->push_context (context);
   if (!indenter->functions->read_token (context, NULL))
     indenter->functions->forward_token (context, FALSE);
   if (!indenter->functions->read_token (context, &token))
-    return 0;
+    {
+      indenter->functions->pop_context (context);
+      return -1;
+    }
+  if (offset == indenter->functions->get_offset (context))
+    indenter->functions->forward_token (context, FALSE);
 
   pool = smie_grammar_get_symbol_pool (indenter->grammar);
   symbol = smie_symbol_intern (pool, token, SMIE_SYMBOL_TERMINAL);
   g_free (token);
-  if (smie_grammar_is_pair_end (indenter->grammar, symbol))
-    {
-      indenter->functions->push_context (context);
-      if (smie_backward_sexp (indenter->grammar,
-			      indenter->functions->backward_token,
-			      indenter->functions->read_token,
-			      context))
-	{
-	  gint indent = smie_indenter_calculate_bol_column (indenter, context);
-	  indenter->functions->pop_context (context);
-	  return indent;
-	}
 
-      if (indenter->functions->read_token (context, &token))
-	{
-	  symbol = smie_symbol_intern (pool, token, SMIE_SYMBOL_TERMINAL);
-	  symbol_class = smie_grammar_get_symbol_class (indenter->grammar,
-							symbol);
-	  g_free (token);
-	  if (symbol_class == SMIE_SYMBOL_CLASS_OPENER)
-	    {
-	      gint indent = smie_indenter_calculate_bol_column (indenter,
-								context);
-	      indenter->functions->pop_context (context);
-	      return indent;
-	    }
-	}
+  if (!smie_grammar_is_keyword (indenter->grammar, symbol))
+    {
       indenter->functions->pop_context (context);
+      return -1;
     }
 
-  /* If the previous line starts with a last closer, align to it.  */
-  indenter->functions->backward_line (context);
-  indenter->functions->backward_to_line_start (context);
-  if (!indenter->functions->read_token (context, NULL))
-    indenter->functions->forward_token (context, FALSE);
-  if (indenter->functions->read_token (context, &token))
+  symbol_class = smie_grammar_get_symbol_class (indenter->grammar, symbol);
+  if (symbol_class == SMIE_SYMBOL_CLASS_OPENER)
     {
-      symbol = smie_symbol_intern (pool, token, SMIE_SYMBOL_TERMINAL);
-      symbol_class = smie_grammar_get_symbol_class (indenter->grammar, symbol);
-      g_free (token);
-      if (symbol_class == SMIE_SYMBOL_CLASS_CLOSER)
-	return smie_indenter_calculate_bol_column (indenter, context);
+      /* FIXME: Skip comments.  */
+      if (smie_indent_starts_line (indenter, context))
+	{
+	  indenter->functions->pop_context (context);
+	  return -1;
+	}
+
+      /* FIXME: Check if the token is hanging.  */
+      indent = indenter->functions->get_line_offset (context);
+      indenter->functions->pop_context (context);
+      return indent;
     }
 
-  /* Otherwise increment the indentation by indenter->step.  */
-  return indenter->step
-    + smie_indenter_calculate_bol_column (indenter, context);
+  offset2 = indenter->functions->get_offset (context);
+  smie_backward_sexp (indenter->grammar,
+		      indenter->functions->backward_token,
+		      indenter->functions->read_token,
+		      context);
+  if (offset2 == indenter->functions->get_offset (context))
+    {
+      indenter->functions->pop_context (context);
+      return -1;
+    }
+
+  indenter->functions->read_token (context, &parent_token);
+  parent_symbol = smie_symbol_intern (pool, parent_token, SMIE_SYMBOL_TERMINAL);
+  g_free (parent_token);
+
+  left_prec
+    = smie_grammar_get_left_prec (indenter->grammar, symbol);
+  parent_left_prec
+    = smie_grammar_get_left_prec (indenter->grammar, parent_symbol);
+
+  if (left_prec == parent_left_prec)
+    {
+      if (offset != indenter->functions->get_offset (context)
+	  && smie_indent_starts_line (indenter, context))
+	{
+	  indenter->functions->pop_context (context);
+	  return indenter->functions->get_line_offset (context);
+	}
+
+      indent = smie_indent_virtual (indenter, context);
+      indenter->functions->pop_context (context);
+      return indent;
+    }
+
+  if (offset == indenter->functions->get_offset (context)
+      && smie_indent_starts_line (indenter, context))
+    {
+      indenter->functions->pop_context (context);
+      return -1;
+    }
+
+  if (smie_grammar_is_keyword (indenter->grammar, parent_symbol))
+    {
+      indenter->functions->backward_char (context);
+      indent = indenter->functions->get_line_offset (context);
+      indenter->functions->pop_context (context);
+      return indent;
+    }
+
+  indent = smie_indent_virtual (indenter, context);
+  indenter->functions->pop_context (context);
+  return indent;
+}
+
+static gint
+smie_indent_after_keyword (struct smie_indenter_t *indenter, gpointer context)
+{
+  gchar *token;
+  smie_symbol_pool_t *pool;
+  const smie_symbol_t *symbol;
+  smie_symbol_class_t symbol_class;
+  gint indent;
+  gint offset;
+
+  indenter->functions->push_context (context);
+  offset = indenter->functions->get_offset (context);
+  if (!indenter->functions->read_token (context, NULL))
+    indenter->functions->backward_token (context, TRUE);
+  if (!indenter->functions->read_token (context, &token))
+    {
+      indenter->functions->pop_context (context);
+      return -1;
+    }
+  if (offset == indenter->functions->get_offset (context))
+    indenter->functions->backward_token (context, TRUE);
+
+  pool = smie_grammar_get_symbol_pool (indenter->grammar);
+  symbol = smie_symbol_intern (pool, token, SMIE_SYMBOL_TERMINAL);
+  g_free (token);
+  if (!smie_grammar_is_keyword (indenter->grammar, symbol))
+    {
+      indenter->functions->pop_context (context);
+      return -1;
+    }
+
+  symbol_class = smie_grammar_get_symbol_class (indenter->grammar, symbol);
+  if (symbol_class == SMIE_SYMBOL_CLASS_CLOSER)
+    {
+      indenter->functions->pop_context (context);
+      return -1;
+    }
+
+  if (symbol_class == SMIE_SYMBOL_CLASS_OPENER
+      || smie_grammar_is_pair_end (indenter->grammar, symbol))
+    {
+      indent = smie_indent_virtual (indenter, context) + indenter->step;
+      indenter->functions->pop_context (context);
+      return indent;
+    }
+  indent = smie_indent_virtual (indenter, context);
+  indenter->functions->pop_context (context);
+  return indent;
 }
 
 static smie_indent_function_t functions[] =
   {
     smie_indent_bob,
-    smie_indent_keyword
+    smie_indent_keyword,
+    smie_indent_after_keyword
   };
 
 gint
@@ -226,6 +291,8 @@ smie_indenter_calculate (struct smie_indenter_t *indenter,
 			 gpointer context)
 {
   gint i;
+
+  indenter->functions->backward_to_line_start (context);
   for (i = 0; i < G_N_ELEMENTS (functions); i++)
     {
       gint indent = functions[i] (indenter, context);
