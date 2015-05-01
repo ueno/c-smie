@@ -268,6 +268,7 @@ editor_application_window_key_press_event (GtkWidget *widget,
       gtk_text_iter_assign (&end_iter, &start_iter);
       current_indent = 0;
       while (!gtk_text_iter_is_end (&end_iter)
+	     && !gtk_text_iter_ends_line (&end_iter)
 	     && g_unichar_isspace (gtk_text_iter_get_char (&end_iter))
 	     && gtk_text_iter_forward_char (&end_iter))
 	current_indent++;

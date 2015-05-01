@@ -223,7 +223,6 @@ smie_indent_keyword (struct smie_indenter_t *indenter, gpointer context)
 
   if (smie_grammar_is_keyword (indenter->grammar, parent_symbol))
     {
-      indenter->functions->backward_char (context);
       indent = indenter->functions->get_line_offset (context);
       indenter->functions->pop_context (context);
       return indent;

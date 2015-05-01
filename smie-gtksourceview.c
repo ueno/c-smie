@@ -337,7 +337,7 @@ static gint
 smie_gtk_source_buffer_get_line_offset (gpointer data)
 {
   struct smie_gtk_source_buffer_context_t *context = data;
-  return gtk_text_iter_get_line_offset (&context->iter) + 1;
+  return gtk_text_iter_get_line_offset (&context->iter);
 }
 
 static gboolean

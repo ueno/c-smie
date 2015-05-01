@@ -343,7 +343,7 @@ smie_test_get_line_offset (gpointer data)
 {
   struct smie_test_context_t *context = data;
   goffset offset = context->offset;
-  while (offset > 0 && context->input[offset] != '\n')
+  while (offset - 1 >= 0 && context->input[offset - 1] != '\n')
     offset--;
   return context->offset - offset;
 }
