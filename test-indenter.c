@@ -24,6 +24,7 @@
 #include "smie-test.h"
 
 #include <fcntl.h>
+#include <string.h>
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <sys/stat.h>
