@@ -1220,11 +1220,20 @@ static gboolean
 smie_next_sexp (struct smie_grammar_t *grammar,
 		smie_next_token_function_t next_token_func,
 		smie_read_token_function_t read_token_func,
+		const struct smie_symbol_t *read_symbol,
 		gpointer context,
 		smie_select_function_t op_forward,
 		smie_select_function_t op_backward)
 {
   GList *stack = NULL;
+
+  if (read_symbol)
+    {
+      struct smie_level_t *level;
+      level = g_hash_table_lookup (grammar->levels, read_symbol);
+      if (level)
+	stack = g_list_prepend (stack, level);
+    }
 
   /* Place the cursor on the token.  */
   if (!read_token_func (context, NULL) && !next_token_func (context, TRUE))
@@ -1297,11 +1306,13 @@ gboolean
 smie_forward_sexp (struct smie_grammar_t *grammar,
 		   smie_next_token_function_t next_token_func,
 		   smie_read_token_function_t read_token_func,
+		   const smie_symbol_t *symbol,
 		   gpointer context)
 {
   return smie_next_sexp (grammar,
 			 next_token_func,
 			 read_token_func,
+			 symbol,
 			 context,
 			 smie_select_right,
 			 smie_select_left);
@@ -1311,11 +1322,13 @@ gboolean
 smie_backward_sexp (struct smie_grammar_t *grammar,
 		    smie_next_token_function_t next_token_func,
 		    smie_read_token_function_t read_token_func,
+		    const smie_symbol_t *symbol,
 		    gpointer context)
 {
   return smie_next_sexp (grammar,
 			 next_token_func,
 			 read_token_func,
+			 symbol,
 			 context,
 			 smie_select_left,
 			 smie_select_right);

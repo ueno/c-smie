@@ -179,6 +179,7 @@ smie_indent_keyword (struct smie_indenter_t *indenter, gpointer context)
   smie_backward_sexp (indenter->grammar,
 		      indenter->functions->backward_token,
 		      indenter->functions->read_token,
+		      NULL,
 		      context);
   if (offset2 == indenter->functions->get_offset (context))
     {
