@@ -1219,12 +1219,12 @@ smie_is_associative (struct smie_level_t *level)
 static gboolean
 smie_next_sexp (struct smie_grammar_t *grammar,
 		smie_next_token_function_t next_token_func,
-		smie_read_token_function_t read_token_func,
 		const struct smie_symbol_t *read_symbol,
 		gpointer context,
 		smie_select_function_t op_forward,
 		smie_select_function_t op_backward)
 {
+  gchar *token;
   GList *stack = NULL;
 
   if (read_symbol)
@@ -1235,19 +1235,11 @@ smie_next_sexp (struct smie_grammar_t *grammar,
 	stack = g_list_prepend (stack, level);
     }
 
-  /* Place the cursor on the token.  */
-  if (!read_token_func (context, NULL) && !next_token_func (context, TRUE))
-    return FALSE;
-
-  do
+  while ((token = next_token_func (context)) != NULL)
     {
       struct smie_symbol_t symbol;
       struct smie_level_t *level;
       gint prec_value;
-      gchar *token;
-
-      if (!read_token_func (context, &token))
-	goto out;
 
       symbol.name = token;
       symbol.type = SMIE_SYMBOL_TERMINAL;
@@ -1285,7 +1277,7 @@ smie_next_sexp (struct smie_grammar_t *grammar,
 		    stack = g_list_prepend (stack, level);
 		}
 	      else if (op_forward (level, &prec_value))
-		goto out;
+		break;
 	      else if (!smie_is_associative (level))
 		stack = g_list_prepend (NULL, level);
 	      else if (smie_is_associative (level2))
@@ -1295,9 +1287,7 @@ smie_next_sexp (struct smie_grammar_t *grammar,
 	    }
 	}
     }
-  while (next_token_func (context, TRUE));
 
- out:
   g_list_free (stack);
   return FALSE;
 }
@@ -1305,13 +1295,11 @@ smie_next_sexp (struct smie_grammar_t *grammar,
 gboolean
 smie_forward_sexp (struct smie_grammar_t *grammar,
 		   smie_next_token_function_t next_token_func,
-		   smie_read_token_function_t read_token_func,
 		   const smie_symbol_t *symbol,
 		   gpointer context)
 {
   return smie_next_sexp (grammar,
 			 next_token_func,
-			 read_token_func,
 			 symbol,
 			 context,
 			 smie_select_right,
@@ -1321,13 +1309,11 @@ smie_forward_sexp (struct smie_grammar_t *grammar,
 gboolean
 smie_backward_sexp (struct smie_grammar_t *grammar,
 		    smie_next_token_function_t next_token_func,
-		    smie_read_token_function_t read_token_func,
 		    const smie_symbol_t *symbol,
 		    gpointer context)
 {
   return smie_next_sexp (grammar,
 			 next_token_func,
-			 read_token_func,
 			 symbol,
 			 context,
 			 smie_select_left,

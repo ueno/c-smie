@@ -139,47 +139,35 @@ smie_indent_keyword (struct smie_indenter_t *indenter, gpointer context)
   gint indent;
 
   indenter->functions->push_context (context);
-  if (!indenter->functions->read_token (context, NULL))
-    indenter->functions->forward_token (context, FALSE);
-  if (!indenter->functions->read_token (context, &token))
-    {
-      indenter->functions->pop_context (context);
-      return -1;
-    }
-  if (offset == indenter->functions->get_offset (context))
-    indenter->functions->forward_token (context, FALSE);
+  token = indenter->functions->forward_token (context);
+  indenter->functions->pop_context (context);
+  if (!token)
+    return -1;
 
   pool = smie_grammar_get_symbol_pool (indenter->grammar);
   symbol = smie_symbol_intern (pool, token, SMIE_SYMBOL_TERMINAL);
   g_free (token);
 
   if (!smie_grammar_is_keyword (indenter->grammar, symbol))
-    {
-      indenter->functions->pop_context (context);
-      return -1;
-    }
+    return -1;
 
   symbol_class = smie_grammar_get_symbol_class (indenter->grammar, symbol);
   if (symbol_class == SMIE_SYMBOL_CLASS_OPENER)
     {
       /* FIXME: Skip comments.  */
       if (smie_indent_starts_line (indenter, context))
-	{
-	  indenter->functions->pop_context (context);
-	  return -1;
-	}
+	return -1;
 
       /* FIXME: Check if the token is hanging.  */
       indent = indenter->functions->get_line_offset (context);
-      indenter->functions->pop_context (context);
       return indent;
     }
 
   offset2 = indenter->functions->get_offset (context);
+  indenter->functions->push_context (context);
   smie_backward_sexp (indenter->grammar,
 		      indenter->functions->backward_token,
-		      indenter->functions->read_token,
-		      NULL,
+		      symbol,
 		      context);
   if (offset2 == indenter->functions->get_offset (context))
     {
@@ -187,14 +175,19 @@ smie_indent_keyword (struct smie_indenter_t *indenter, gpointer context)
       return -1;
     }
 
-  if (!indenter->functions->read_token (context, &parent_token))
+  indenter->functions->push_context (context);
+  parent_token = indenter->functions->forward_token (context);
+  indenter->functions->pop_context (context);
+  if (!parent_token)
     {
       indenter->functions->pop_context (context);
       return -1;
     }
-
   parent_symbol = smie_symbol_intern (pool, parent_token, SMIE_SYMBOL_TERMINAL);
   g_free (parent_token);
+
+  /* Place the cursor at the beginnning of the first token on the line.  */
+  indenter->functions->forward_comment (context);
 
   left_prec
     = smie_grammar_get_left_prec (indenter->grammar, symbol);
@@ -246,15 +239,12 @@ smie_indent_after_keyword (struct smie_indenter_t *indenter, gpointer context)
 
   indenter->functions->push_context (context);
   offset = indenter->functions->get_offset (context);
-  if (!indenter->functions->read_token (context, NULL))
-    indenter->functions->backward_token (context, TRUE);
-  if (!indenter->functions->read_token (context, &token))
+  token = indenter->functions->backward_token (context);
+  if (!token)
     {
       indenter->functions->pop_context (context);
       return -1;
     }
-  if (offset == indenter->functions->get_offset (context))
-    indenter->functions->backward_token (context, TRUE);
 
   pool = smie_grammar_get_symbol_pool (indenter->grammar);
   symbol = smie_symbol_intern (pool, token, SMIE_SYMBOL_TERMINAL);

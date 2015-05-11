@@ -37,15 +37,14 @@ struct smie_cursor_functions_t
   gboolean (* backward_to_line_start) (gpointer);
   gboolean (* forward_comment) (gpointer);
   gboolean (* backward_comment) (gpointer);
-  gboolean (* forward_token) (gpointer, gboolean);
-  gboolean (* backward_token) (gpointer, gboolean);
+  gchar * (* forward_token) (gpointer);
+  gchar * (* backward_token) (gpointer);
   gboolean (* is_start) (gpointer);
   gboolean (* is_end) (gpointer);
   gboolean (* starts_line) (gpointer);
   gboolean (* ends_line) (gpointer);
   gint (* get_offset) (gpointer);
   gint (* get_line_offset) (gpointer);
-  gboolean (* read_token) (gpointer, gchar **);
   gunichar (* read_char) (gpointer);
   void (* push_context) (gpointer);
   void (* pop_context) (gpointer);

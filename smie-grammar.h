@@ -141,18 +141,15 @@ gboolean smie_prec2_to_grammar (smie_prec2_grammar_t *prec2,
 				smie_grammar_t *grammar,
 				GError **error);
 
-typedef gboolean (*smie_next_token_function_t) (gpointer, gboolean);
-typedef gboolean (*smie_read_token_function_t) (gpointer, gchar **);
+typedef gchar * (*smie_next_token_function_t) (gpointer);
 
 gboolean smie_forward_sexp (smie_grammar_t *grammar,
 			    smie_next_token_function_t next_token_func,
-			    smie_read_token_function_t read_token_func,
 			    const smie_symbol_t *symbol,
 			    gpointer context);
 
 gboolean smie_backward_sexp (smie_grammar_t *grammar,
 			     smie_next_token_function_t next_token_func,
-			     smie_read_token_function_t read_token_func,
 			     const smie_symbol_t *symbol,
 			     gpointer context);
 

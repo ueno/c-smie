@@ -300,34 +300,30 @@ test_movement_forward (struct fixture *fixture, gconstpointer user_data)
   context.offset = 1;
   smie_forward_sexp (fixture->grammar,
 		     smie_test_cursor_functions.forward_token,
-		     smie_test_cursor_functions.read_token,
 		     NULL,
 		     &context);
-  g_assert_cmpint (22, ==, context.offset);
+  g_assert_cmpint (23, ==, context.offset);
 
   context.offset = 2;
   smie_forward_sexp (fixture->grammar,
 		     smie_test_cursor_functions.forward_token,
-		     smie_test_cursor_functions.read_token,
 		     NULL,
 		     &context);
-  g_assert_cmpint (22, ==, context.offset);
+  g_assert_cmpint (23, ==, context.offset);
 
   context.offset = 3;
   smie_forward_sexp (fixture->grammar,
 		     smie_test_cursor_functions.forward_token,
-		     smie_test_cursor_functions.read_token,
 		     NULL,
 		     &context);
-  g_assert_cmpint (6, ==, context.offset);
+  g_assert_cmpint (7, ==, context.offset);
 
   context.offset = 7;
   smie_forward_sexp (fixture->grammar,
 		     smie_test_cursor_functions.forward_token,
-		     smie_test_cursor_functions.read_token,
 		     NULL,
 		     &context);
-  g_assert_cmpint (16, ==, context.offset);
+  g_assert_cmpint (17, ==, context.offset);
 }
 
 static void
@@ -340,34 +336,30 @@ test_movement_backward (struct fixture *fixture, gconstpointer user_data)
   context.offset = 23;
   smie_backward_sexp (fixture->grammar,
 		      smie_test_cursor_functions.backward_token,
-		      smie_test_cursor_functions.read_token,
 		      NULL,
 		      &context);
-  g_assert_cmpint (2, ==, context.offset);
+  g_assert_cmpint (1, ==, context.offset);
 
   context.offset = 22;
   smie_backward_sexp (fixture->grammar,
 		      smie_test_cursor_functions.backward_token,
-		      smie_test_cursor_functions.read_token,
 		      NULL,
 		      &context);
-  g_assert_cmpint (2, ==, context.offset);
+  g_assert_cmpint (1, ==, context.offset);
 
   context.offset = 17;
   smie_backward_sexp (fixture->grammar,
 		      smie_test_cursor_functions.backward_token,
-		      smie_test_cursor_functions.read_token,
 		      NULL,
 		      &context);
-  g_assert_cmpint (8, ==, context.offset);
+  g_assert_cmpint (7, ==, context.offset);
 
   context.offset = 7;
   smie_backward_sexp (fixture->grammar,
 		      smie_test_cursor_functions.backward_token,
-		      smie_test_cursor_functions.read_token,
 		      NULL,
 		      &context);
-  g_assert_cmpint (6, ==, context.offset);
+  g_assert_cmpint (5, ==, context.offset);
 }
 
 int
