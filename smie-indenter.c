@@ -182,7 +182,10 @@ smie_indent_keyword (struct smie_indenter_t *indenter, gpointer context)
   parent_symbol = smie_symbol_intern (pool, parent_token, SMIE_SYMBOL_TERMINAL);
   g_free (parent_token);
 
-  /* Place the cursor at the beginnning of the first token on the line.  */
+  /* For later calls to smie_indent_virtual, place the cursor at the
+     beginnning of the first token on the line.  */
+  if (indenter->functions->ends_line (context))
+    indenter->functions->forward_char (context);
   indenter->functions->forward_comment (context);
 
   left_prec
@@ -256,9 +259,11 @@ smie_indent_after_keyword (struct smie_indenter_t *indenter, gpointer context)
       return -1;
     }
 
-  /* Place the cursor at the beginnning of the line.  */
+  /* For later calls to smie_indent_virtual, place the cursor at the
+     beginnning of the first token on the line.  */
   if (indenter->functions->ends_line (context))
     indenter->functions->forward_char (context);
+  indenter->functions->forward_comment (context);
 
   if (symbol_class == SMIE_SYMBOL_CLASS_OPENER
       || smie_grammar_is_pair_end (indenter->grammar, symbol))
