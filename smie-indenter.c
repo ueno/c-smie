@@ -79,13 +79,10 @@ static gboolean
 smie_indent_starts_line (struct smie_indenter_t *indenter,
 			 gpointer context)
 {
-  indenter->functions->push_context (context);
   if (indenter->functions->starts_line (context))
-    {
-      indenter->functions->pop_context (context);
-      return TRUE;
-    }
+    return TRUE;
 
+  indenter->functions->push_context (context);
   while (indenter->functions->backward_char (context)
 	 && !indenter->functions->starts_line (context))
     {
@@ -96,7 +93,6 @@ smie_indent_starts_line (struct smie_indenter_t *indenter,
 	  return FALSE;
 	}
     }
-
   indenter->functions->pop_context (context);
   return TRUE;
 }
@@ -259,6 +255,10 @@ smie_indent_after_keyword (struct smie_indenter_t *indenter, gpointer context)
       indenter->functions->pop_context (context);
       return -1;
     }
+
+  /* Place the cursor at the beginnning of the line.  */
+  if (indenter->functions->ends_line (context))
+    indenter->functions->forward_char (context);
 
   if (symbol_class == SMIE_SYMBOL_CLASS_OPENER
       || smie_grammar_is_pair_end (indenter->grammar, symbol))
