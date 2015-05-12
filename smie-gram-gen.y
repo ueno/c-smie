@@ -25,18 +25,21 @@
 #include "smie-gram-gen.h"
 static int yylex (YYSTYPE *lval,
 		  smie_bnf_grammar_t *grammar,
+		  smie_precs_grammar_t *precs,
 		  const gchar **input,
 		  GError **error);
 static void yyerror (smie_bnf_grammar_t *grammar,
+		     smie_precs_grammar_t *precs,
 		     const gchar **input,
 		     GError **error,
 		     const char *string);
 %}
-%param {smie_bnf_grammar_t *grammar} {const gchar **input} {GError **error}
+%param {smie_bnf_grammar_t *grammar} {smie_precs_grammar_t *precs} {const gchar **input} {GError **error}
 %define api.pure full
 
 %union {
   const smie_symbol_t *sval;
+  smie_prec_type_t pval;
   GList *lval;
   gchar *tval;
 }
@@ -44,10 +47,42 @@ static void yyerror (smie_bnf_grammar_t *grammar,
 %token <tval> NONTERMINAL
 %token <tval> TERMINAL
 %token <tval> TERMINALVAR
-%type <sval> symbol
-%type <lval> sentences symbols
+%token SEPARATOR
+%token <pval> LEFT RIGHT ASSOC NONASSOC
+%type <sval> symbol terminal
+%type <lval> sentences symbols terminals
+%type <pval> prectype
 
 %%
+
+grammar: header SEPARATOR rules
+	;
+
+header:	precs
+	;
+
+precs:	%empty
+	| precs prec
+	;
+
+prec:	prectype terminals ';'
+	{
+	  GList *terminals = $2, *l = terminals;
+	  const smie_symbol_t **symbols
+	    = g_malloc0_n (g_list_length (terminals) + 1, sizeof (smie_symbol_t *));
+	  const smie_symbol_t **p = symbols;
+	  for (; l; l = l->next)
+	    *p++ = l->data;
+	  smie_precs_grammar_add_prec (precs, $1, symbols);
+	  g_free (symbols);
+	}
+	;
+
+prectype: LEFT
+	| RIGHT
+	| ASSOC
+	| NONASSOC
+	;
 
 rules:	%empty
 	| rules rule
@@ -96,11 +131,7 @@ symbol:	NONTERMINAL
 	  $$ = smie_symbol_intern (grammar->pool, $1, SMIE_SYMBOL_NON_TERMINAL);
 	  g_free ($1);
 	}
-	| TERMINAL
-	{
-	  $$ = smie_symbol_intern (grammar->pool, $1, SMIE_SYMBOL_TERMINAL);
-	  g_free ($1);
-	}
+	| terminal
 	| TERMINALVAR
 	{
 	  $$ = smie_symbol_intern (grammar->pool, $1, SMIE_SYMBOL_TERMINAL_VARIABLE);
@@ -108,10 +139,27 @@ symbol:	NONTERMINAL
 	}
 	;
 
+terminals:	terminal
+	{
+	  $$ = g_list_append (NULL, (gpointer) $1);
+	}
+	| terminals terminal
+	{
+	  $$ = g_list_append ($1, (gpointer) $2);
+	}
+	;
+
+terminal:	TERMINAL
+	{
+	  $$ = smie_symbol_intern (grammar->pool, $1, SMIE_SYMBOL_TERMINAL);
+	  g_free ($1);
+	}
+	;
+
 %%
 
 static int
-yylex (YYSTYPE *lval, smie_bnf_grammar_t *grammar,
+yylex (YYSTYPE *lval, smie_bnf_grammar_t *grammar, smie_precs_grammar_t *precs,
        const gchar **input, GError **error)
 {
   const char *cp = *input;
@@ -127,6 +175,39 @@ yylex (YYSTYPE *lval, smie_bnf_grammar_t *grammar,
 
   if (*cp == '\0')
     return YYEOF;
+
+  if (*cp == '%')
+    {
+      if (*(cp + 1) == '%')
+	{
+	  *input = cp + 2;
+	  return SEPARATOR;
+	}
+      else if (g_str_has_prefix (cp + 1, "left"))
+	{
+	  *input = cp + 5;
+	  lval->pval = SMIE_PREC_LEFT;
+	  return LEFT;
+	}
+      else if (g_str_has_prefix (cp + 1, "right"))
+	{
+	  *input = cp + 6;
+	  lval->pval = SMIE_PREC_RIGHT;
+	  return RIGHT;
+	}
+      else if (g_str_has_prefix (cp + 1, "assoc"))
+	{
+	  *input = cp + 6;
+	  lval->pval = SMIE_PREC_ASSOC;
+	  return ASSOC;
+	}
+      else if (g_str_has_prefix (cp + 1, "nonassoc"))
+	{
+	  *input = cp + 9;
+	  lval->pval = SMIE_PREC_NON_ASSOC;
+	  return NONASSOC;
+	}
+    }
 
   if (*cp == '"' || *cp == '\'')
     {
@@ -185,7 +266,7 @@ yylex (YYSTYPE *lval, smie_bnf_grammar_t *grammar,
 }
 
 static void
-yyerror (smie_bnf_grammar_t *grammar,
+yyerror (smie_bnf_grammar_t *grammar, smie_precs_grammar_t *precs,
 	 const gchar **input, GError **error, const char *string)
 {
   g_set_error_literal (error, SMIE_ERROR, SMIE_ERROR_GRAMMAR, string);

@@ -87,17 +87,21 @@ static smie_bnf_grammar_t *
 populate_bnf_grammar_from_string (smie_symbol_pool_t *pool)
 {
   smie_bnf_grammar_t *bnf;
+  smie_precs_grammar_t *precs;
   GError *error;
 
   error = NULL;
   bnf = smie_bnf_grammar_alloc (pool);
-  smie_bnf_grammar_load (bnf, "\
+  precs = smie_precs_grammar_alloc (pool);
+  smie_bnf_grammar_load (bnf, precs, "\
+%%\n\
 s: \"#\" e \"#\";\n\
 e: e \"+\" t | t;\n\
 t: t \"x\" f | f;\n\
 f: N | \"(\" e \")\";",
 			 &error);
   g_assert_no_error (error);
+  smie_precs_grammar_free (precs);
   return bnf;
 }
 

@@ -156,16 +156,12 @@ smie_bnf_grammar_free (struct smie_bnf_grammar_t *bnf)
 
 gboolean
 smie_bnf_grammar_load (struct smie_bnf_grammar_t *bnf,
+		       struct smie_precs_grammar_t *precs,
 		       const gchar *input,
 		       GError **error)
 {
   const gchar *cp = input;
-  if (yyparse (bnf, &cp, error) != 0)
-    {
-      smie_bnf_grammar_free (bnf);
-      return FALSE;
-    }
-  return TRUE;
+  return yyparse (bnf, precs, &cp, error) == 0;
 }
 
 gboolean

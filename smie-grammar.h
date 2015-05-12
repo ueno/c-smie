@@ -82,6 +82,7 @@ smie_bnf_grammar_t *smie_bnf_grammar_alloc (smie_symbol_pool_t *pool);
 void smie_bnf_grammar_free (smie_bnf_grammar_t *bnf);
 
 gboolean smie_bnf_grammar_load (smie_bnf_grammar_t *bnf,
+				smie_precs_grammar_t *precs,
 				const gchar *input,
 				GError **error);
 gboolean smie_bnf_grammar_add_rule (smie_bnf_grammar_t *bnf,

@@ -89,10 +89,13 @@ set_indenter (EditorApplicationWindow *window, const gchar *filename)
   GMappedFile *mapped_file;
   smie_symbol_pool_t *pool;
   smie_bnf_grammar_t *bnf;
+  smie_precs_grammar_t *precs;
   smie_prec2_grammar_t *prec2;
   smie_grammar_t *grammar;
   const gchar *contents;
   GError *error;
+  GList *resolvers;
+  gboolean result;
 
   error = NULL;
   mapped_file = g_mapped_file_new (filename, FALSE, &error);
@@ -106,39 +109,48 @@ set_indenter (EditorApplicationWindow *window, const gchar *filename)
   pool = smie_symbol_pool_alloc ();
   error = NULL;
   bnf = smie_bnf_grammar_alloc (pool);
+  precs = smie_precs_grammar_alloc (pool);
   contents = (const gchar *) g_mapped_file_get_contents (mapped_file);
-  if (!smie_bnf_grammar_load (bnf, contents, &error))
+  result = smie_bnf_grammar_load (bnf, precs, contents, &error);
+  g_mapped_file_unref (mapped_file);
+  if (!result)
     {
       g_warning ("Error while loading the grammar: %s", error->message);
       g_error_free (error);
       smie_symbol_pool_unref (pool);
       smie_bnf_grammar_free (bnf);
-      g_mapped_file_unref (mapped_file);
+      smie_precs_grammar_free (precs);
       return;
     }
-  g_mapped_file_unref (mapped_file);
 
   error = NULL;
   prec2 = smie_prec2_grammar_alloc (pool);
-  if (!smie_bnf_to_prec2 (bnf, prec2, NULL, &error))
+  resolvers = g_list_prepend (NULL, precs);
+  result = smie_bnf_to_prec2 (bnf, prec2, resolvers, &error);
+  smie_bnf_grammar_free (bnf);
+  smie_precs_grammar_free (precs);
+  g_list_free (resolvers);
+  if (!result)
     {
       g_warning ("Error while converting BNF to prec2: %s", error->message);
       g_error_free (error);
       smie_symbol_pool_unref (pool);
+      smie_prec2_grammar_free (prec2);
       return;
     }
-  smie_bnf_grammar_free (bnf);
 
   error = NULL;
   grammar = smie_grammar_alloc (pool);
-  if (!smie_prec2_to_grammar (prec2, grammar, &error))
+  result = smie_prec2_to_grammar (prec2, grammar, &error);
+  smie_prec2_grammar_free (prec2);
+  if (!result)
     {
       g_warning ("Error while converting prec2 to grammar: %s", error->message);
       g_error_free (error);
       smie_symbol_pool_unref (pool);
+      smie_grammar_free (grammar);
       return;
     }
-  smie_prec2_grammar_free (prec2);
 
   window->indenter
     = smie_indenter_new (grammar,

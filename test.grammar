@@ -1,3 +1,10 @@
+%assoc ";";
+%assoc "|";
+%assoc "&&";
+%assoc "||";
+
+%%
+
 cmd	: "case" exp "in" branches "esac"
 	| "if" cmd "then" cmd "fi"
 	| "if" cmd "then" cmd "else" cmd "fi"
@@ -5,6 +12,10 @@ cmd	: "case" exp "in" branches "esac"
 	| "until" cmd "do" cmd "done"
 	| "for" exp "in" cmd "do" cmd "done"
 	| "for" exp "do" cmd "done"
+	| cmd "|" cmd
+	| cmd "&&" cmd
+	| cmd "||" cmd
+	| cmd ";" cmd
 	;
 exp	: EXP
 	;

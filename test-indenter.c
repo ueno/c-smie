@@ -44,10 +44,12 @@ setup (struct fixture *fixture, gconstpointer user_data)
 {
   smie_symbol_pool_t *pool = smie_symbol_pool_alloc ();
   smie_bnf_grammar_t *bnf;
+  smie_precs_grammar_t *precs;
   smie_prec2_grammar_t *prec2;
   smie_grammar_t *grammar;
   int fd;
   struct stat statbuf;
+  GList *resolvers;
   GError *error;
 
   fd = open (GRAMMAR_FILE, O_RDONLY);
@@ -61,7 +63,9 @@ setup (struct fixture *fixture, gconstpointer user_data)
 
   error = NULL;
   bnf = smie_bnf_grammar_alloc (pool);
+  precs = smie_precs_grammar_alloc (pool);
   smie_bnf_grammar_load (bnf,
+			 precs,
 			 (const gchar *) fixture->grammar_addr,
 			 &error);
   g_assert (bnf);
@@ -69,9 +73,12 @@ setup (struct fixture *fixture, gconstpointer user_data)
 
   error = NULL;
   prec2 = smie_prec2_grammar_alloc (pool);
-  g_assert (smie_bnf_to_prec2 (bnf, prec2, NULL, &error));
+  resolvers = g_list_prepend (NULL, precs);
+  g_assert (smie_bnf_to_prec2 (bnf, prec2, resolvers, &error));
+  g_list_free (resolvers);
   g_assert_no_error (error);
   smie_bnf_grammar_free (bnf);
+  smie_precs_grammar_free (precs);
 
   error = NULL;
   grammar = smie_grammar_alloc (pool);
