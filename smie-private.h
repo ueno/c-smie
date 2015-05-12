@@ -110,6 +110,14 @@ struct smie_grammar_t
   GHashTable *ends;
 };
 
+struct smie_grammar_parser_context_t
+{
+  struct smie_bnf_grammar_t *bnf;
+  struct smie_precs_grammar_t *precs;
+  GList *resolvers;
+  const gchar *input;
+};
+
 G_END_DECLS
 
 #endif	/* __SMIE_PRIVATE_H__ */

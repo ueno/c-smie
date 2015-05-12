@@ -88,13 +88,10 @@ set_indenter (EditorApplicationWindow *window, const gchar *filename)
 {
   GMappedFile *mapped_file;
   smie_symbol_pool_t *pool;
-  smie_bnf_grammar_t *bnf;
-  smie_precs_grammar_t *precs;
   smie_prec2_grammar_t *prec2;
   smie_grammar_t *grammar;
   const gchar *contents;
   GError *error;
-  GList *resolvers;
   gboolean result;
 
   error = NULL;
@@ -108,34 +105,15 @@ set_indenter (EditorApplicationWindow *window, const gchar *filename)
 
   pool = smie_symbol_pool_alloc ();
   error = NULL;
-  bnf = smie_bnf_grammar_alloc (pool);
-  precs = smie_precs_grammar_alloc (pool);
+  prec2 = smie_prec2_grammar_alloc (pool);
   contents = (const gchar *) g_mapped_file_get_contents (mapped_file);
-  result = smie_bnf_grammar_load (bnf, precs, contents, &error);
+  result = smie_prec2_grammar_load (prec2, contents, &error);
   g_mapped_file_unref (mapped_file);
   if (!result)
     {
       g_warning ("Error while loading the grammar: %s", error->message);
       g_error_free (error);
       smie_symbol_pool_unref (pool);
-      smie_bnf_grammar_free (bnf);
-      smie_precs_grammar_free (precs);
-      return;
-    }
-
-  error = NULL;
-  prec2 = smie_prec2_grammar_alloc (pool);
-  resolvers = g_list_prepend (NULL, precs);
-  result = smie_bnf_to_prec2 (bnf, prec2, resolvers, &error);
-  smie_bnf_grammar_free (bnf);
-  smie_precs_grammar_free (precs);
-  g_list_free (resolvers);
-  if (!result)
-    {
-      g_warning ("Error while converting BNF to prec2: %s", error->message);
-      g_error_free (error);
-      smie_symbol_pool_unref (pool);
-      smie_prec2_grammar_free (prec2);
       return;
     }
 

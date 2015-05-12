@@ -83,28 +83,6 @@ populate_bnf_grammar (smie_symbol_pool_t *pool)
   return bnf;
 }
 
-static smie_bnf_grammar_t *
-populate_bnf_grammar_from_string (smie_symbol_pool_t *pool)
-{
-  smie_bnf_grammar_t *bnf;
-  smie_precs_grammar_t *precs;
-  GError *error;
-
-  error = NULL;
-  bnf = smie_bnf_grammar_alloc (pool);
-  precs = smie_precs_grammar_alloc (pool);
-  smie_bnf_grammar_load (bnf, precs, "\
-%%\n\
-s: \"#\" e \"#\";\n\
-e: e \"+\" t | t;\n\
-t: t \"x\" f | f;\n\
-f: N | \"(\" e \")\";",
-			 &error);
-  g_assert_no_error (error);
-  smie_precs_grammar_free (precs);
-  return bnf;
-}
-
 static smie_prec2_grammar_t *
 populate_prec2_grammar (smie_symbol_pool_t *pool)
 {
@@ -210,23 +188,18 @@ teardown_bnf (struct fixture *fixture, gconstpointer user_data)
 static void
 test_construct_bnf (struct fixture *fixture, gconstpointer user_data)
 {
-  smie_bnf_grammar_t *expected, *actual;
+  smie_bnf_grammar_t *bnf;
 
-  expected = populate_bnf_grammar (fixture->pool);
-  g_assert (expected != NULL);
-
-  actual = populate_bnf_grammar_from_string (fixture->pool);
-  g_assert (actual != NULL);
-  g_assert (smie_test_bnf_grammar_equal (expected, actual));
-  smie_bnf_grammar_free (expected);
-  smie_bnf_grammar_free (actual);
+  bnf = populate_bnf_grammar (fixture->pool);
+  g_assert (bnf != NULL);
+  smie_bnf_grammar_free (bnf);
 }
 
 static void
 setup_prec2 (struct fixture *fixture, gconstpointer user_data)
 {
   fixture->pool = smie_symbol_pool_alloc ();
-  fixture->bnf = populate_bnf_grammar_from_string (fixture->pool);
+  fixture->bnf = populate_bnf_grammar (fixture->pool);
 }
 
 static void

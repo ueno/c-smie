@@ -1,10 +1,3 @@
-%assoc ";";
-%assoc "|";
-%assoc "&&";
-%assoc "||";
-
-%%
-
 cmd	: "case" exp "in" branches "esac"
 	| "if" cmd "then" cmd "fi"
 	| "if" cmd "then" cmd "else" cmd "fi"
@@ -21,3 +14,8 @@ exp	: EXP
 	;
 branches: BRANCHES
 	;
+
+%precs {
+       assoc ";" "|";
+       assoc "&&" "||";
+}

@@ -23,8 +23,8 @@
 #include <glib/gprintf.h>
 #include <string.h>
 #include "smie-grammar.h"
-#include "smie-gram-gen.h"
 #include "smie-private.h"
+#include "smie-gram-gen.h"
 
 static guint
 smie_symbol_hash (gconstpointer key)
@@ -155,13 +155,26 @@ smie_bnf_grammar_free (struct smie_bnf_grammar_t *bnf)
 }
 
 gboolean
-smie_bnf_grammar_load (struct smie_bnf_grammar_t *bnf,
-		       struct smie_precs_grammar_t *precs,
-		       const gchar *input,
-		       GError **error)
+smie_prec2_grammar_load (struct smie_prec2_grammar_t *prec2,
+			 const gchar *input,
+			 GError **error)
 {
-  const gchar *cp = input;
-  return yyparse (bnf, precs, &cp, error) == 0;
+  struct smie_grammar_parser_context_t context;
+  gboolean result;
+  memset (&context, 0, sizeof (struct smie_grammar_parser_context_t));
+  context.input = input;
+  context.bnf = smie_bnf_grammar_alloc (prec2->pool);
+  if (yyparse (&context, error) != 0)
+    {
+      smie_bnf_grammar_free (context.bnf);
+      g_list_free_full (context.resolvers,
+			(GDestroyNotify) smie_precs_grammar_free);
+      return FALSE;
+    }
+
+  result = smie_bnf_to_prec2 (context.bnf, prec2, context.resolvers, error);
+  smie_bnf_grammar_free (context.bnf);
+  return result;
 }
 
 gboolean
@@ -325,13 +338,12 @@ smie_precs_grammar_free (struct smie_precs_grammar_t *precs)
 void
 smie_precs_grammar_add_prec (struct smie_precs_grammar_t *precs,
 			     smie_prec_type_t type,
-			     const smie_symbol_t **symbols)
+			     GList *symbols)
 {
   struct smie_prec_t *prec = g_new0 (struct smie_prec_t, 1);
   prec->type = type;
-  for (; *symbols; symbols++)
-    prec->op = g_list_append (prec->op, (gpointer) *symbols);
-  precs->precs = g_list_append (precs->precs, (gpointer) prec);
+  prec->op = g_list_append (prec->op, symbols);
+  precs->precs = g_list_append (precs->precs, prec);
 }
 
 static void
@@ -567,6 +579,7 @@ smie_bnf_to_prec2 (struct smie_bnf_grammar_t *bnf,
 	  struct smie_precs_grammar_t *precs = l->data;
 	  smie_precs_to_prec2 (precs, override);
 	}
+      g_list_free_full (resolvers, (GDestroyNotify) smie_precs_grammar_free);
     }
 
   g_hash_table_iter_init (&iter, bnf->rules);
