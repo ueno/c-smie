@@ -235,10 +235,8 @@ smie_indent_after_keyword (struct smie_indenter_t *indenter, gpointer context)
   const smie_symbol_t *symbol;
   smie_symbol_class_t symbol_class;
   gint indent;
-  gint offset;
 
   indenter->functions->push_context (context);
-  offset = indenter->functions->get_offset (context);
   token = indenter->functions->backward_token (context);
   if (!token)
     {
