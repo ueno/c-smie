@@ -129,11 +129,18 @@ smie_gtk_source_buffer_forward_token (gpointer data)
 						&context->iter,
 						"string"))
     {
-      /* Read string.  */
+      /* Read a string literal.  */
       while (!gtk_text_iter_is_end (&context->iter)
 	     && gtk_source_buffer_iter_has_context_class (context->buffer,
 							  &context->iter,
 							  "string"))
+	gtk_text_iter_forward_char (&context->iter);
+    }
+  else if (g_unichar_ispunct (gtk_text_iter_get_char (&context->iter)))
+    {
+      /* Read a punctuation.  */
+      while (!gtk_text_iter_is_end (&context->iter)
+	     && g_unichar_ispunct (gtk_text_iter_get_char (&context->iter)))
 	gtk_text_iter_forward_char (&context->iter);
     }
   else
@@ -176,11 +183,18 @@ smie_gtk_source_buffer_backward_token (gpointer data)
 						&context->iter,
 						"string"))
     {
-      /* Read string.  */
+      /* Read a string literal.  */
       while (!gtk_text_iter_is_start (&context->iter)
 	     && gtk_source_buffer_iter_has_context_class (context->buffer,
 							  &context->iter,
 							  "string"))
+	gtk_text_iter_backward_char (&context->iter);
+    }
+  else if (g_unichar_ispunct (gtk_text_iter_get_char (&context->iter)))
+    {
+      /* Read a punctuation.  */
+      while (!gtk_text_iter_is_start (&context->iter)
+	     && g_unichar_ispunct (gtk_text_iter_get_char (&context->iter)))
 	gtk_text_iter_backward_char (&context->iter);
     }
   else
