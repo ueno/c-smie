@@ -86,7 +86,7 @@ smie_indent_starts_line (struct smie_indenter_t *indenter,
   while (indenter->functions->backward_char (context)
 	 && !indenter->functions->starts_line (context))
     {
-      gunichar uc = indenter->functions->read_char (context);
+      gunichar uc = indenter->functions->get_char (context);
       if (!(uc == ' ' || uc == '\t'))
 	{
 	  indenter->functions->pop_context (context);

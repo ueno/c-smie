@@ -24,7 +24,7 @@ G_BEGIN_DECLS
 
 typedef struct smie_indenter_t smie_indenter_t;
 
-typedef gunichar (*smie_read_char_function_t) (gpointer);
+typedef gunichar (*smie_get_char_function_t) (gpointer);
 
 typedef struct smie_cursor_functions_t smie_cursor_functions_t;
 struct smie_cursor_functions_t
@@ -45,7 +45,7 @@ struct smie_cursor_functions_t
   gboolean (* ends_line) (gpointer);
   gint (* get_offset) (gpointer);
   gint (* get_line_offset) (gpointer);
-  gunichar (* read_char) (gpointer);
+  gunichar (* get_char) (gpointer);
   void (* push_context) (gpointer);
   void (* pop_context) (gpointer);
 };

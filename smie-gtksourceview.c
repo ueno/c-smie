@@ -247,7 +247,7 @@ smie_gtk_source_buffer_get_line_offset (gpointer data)
 }
 
 static gunichar
-smie_gtk_source_buffer_read_char (gpointer user_data)
+smie_gtk_source_buffer_get_char (gpointer user_data)
 {
   struct smie_gtk_source_buffer_context_t *context = user_data;
   return gtk_text_iter_get_char (&context->iter);
@@ -289,7 +289,7 @@ smie_cursor_functions_t smie_gtk_source_buffer_cursor_functions =
     smie_gtk_source_buffer_ends_line,
     smie_gtk_source_buffer_get_offset,
     smie_gtk_source_buffer_get_line_offset,
-    smie_gtk_source_buffer_read_char,
+    smie_gtk_source_buffer_get_char,
     smie_gtk_source_buffer_push_context,
     smie_gtk_source_buffer_pop_context
   };

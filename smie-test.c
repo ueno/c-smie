@@ -349,7 +349,7 @@ smie_test_get_line_offset (gpointer data)
 }
 
 static gunichar
-smie_test_read_char (gpointer user_data)
+smie_test_get_char (gpointer user_data)
 {
   struct smie_test_context_t *context = user_data;
   if (context->offset < 0
@@ -393,7 +393,7 @@ smie_cursor_functions_t smie_test_cursor_functions =
     smie_test_ends_line,
     smie_test_get_offset,
     smie_test_get_line_offset,
-    smie_test_read_char,
+    smie_test_get_char,
     smie_test_push_context,
     smie_test_pop_context
   };
