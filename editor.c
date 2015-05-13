@@ -71,7 +71,7 @@ G_DEFINE_TYPE (EditorApplication, editor_application, GTK_TYPE_APPLICATION);
 G_DEFINE_TYPE (EditorApplicationWindow, editor_application_window,
                GTK_TYPE_APPLICATION_WINDOW);
 
-static const gchar *indent_filename;
+static const gchar *grammar_filename;
 
 static void
 remove_all_marks (GtkSourceBuffer *buffer)
@@ -169,8 +169,8 @@ load_ready (GObject *source_object, GAsyncResult *res, gpointer user_data)
   if (language)
     gtk_source_buffer_set_language (window->buffer, language);
 
-  if (indent_filename)
-    set_indenter (window, indent_filename);
+  if (grammar_filename)
+    set_indenter (window, grammar_filename);
 
  out:
   g_object_unref (loader);
@@ -218,8 +218,8 @@ editor_application_activate (GApplication *application)
 			 "application", application,
 			 NULL);
 
-  if (indent_filename)
-    set_indenter (window, indent_filename);
+  if (grammar_filename)
+    set_indenter (window, grammar_filename);
 
   gtk_window_present (GTK_WINDOW (window));
 }
@@ -330,8 +330,8 @@ editor_application_window_init (EditorApplicationWindow *window)
 
 static GOptionEntry entries[] =
   {
-    { "indent", 'i', 0, G_OPTION_ARG_STRING, &indent_filename,
-      "Use FILE as indentation rule", "FILE" },
+    { "grammar", 'g', 0, G_OPTION_ARG_STRING, &grammar_filename,
+      "Use FILE as grammar", "FILE" },
     { NULL }
   };
 
