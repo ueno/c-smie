@@ -153,6 +153,7 @@ smie_gtk_source_buffer_forward_token (gpointer data)
 		  || gtk_source_buffer_iter_has_context_class (context->buffer,
 							       &context->iter,
 							       "string")
+		  || g_unichar_ispunct (gtk_text_iter_get_char (&context->iter))
 		  || g_unichar_isspace (gtk_text_iter_get_char (&context->iter))))
 	gtk_text_iter_forward_char (&context->iter);
     }
@@ -207,6 +208,7 @@ smie_gtk_source_buffer_backward_token (gpointer data)
 		  || gtk_source_buffer_iter_has_context_class (context->buffer,
 							       &context->iter,
 							       "string")
+		  || g_unichar_ispunct (gtk_text_iter_get_char (&context->iter))
 		  || g_unichar_isspace (gtk_text_iter_get_char (&context->iter))))
 	gtk_text_iter_backward_char (&context->iter);
     }
