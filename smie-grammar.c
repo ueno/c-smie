@@ -492,8 +492,8 @@ smie_precs_grammar_add_prec (smie_precs_grammar_t *precs,
 }
 
 static void
-smie_precs_to_prec2 (smie_precs_grammar_t *precs,
-		     smie_prec2_grammar_t *prec2)
+smie_prec2_merge_precs (smie_prec2_grammar_t *prec2,
+			smie_precs_grammar_t *precs)
 {
   GList *l = precs->precs;
   for (; l; l = l->next)
@@ -751,7 +751,7 @@ smie_bnf_to_prec2 (smie_bnf_grammar_t *bnf,
       for (l = resolvers; l; l = l->next)
 	{
 	  smie_precs_grammar_t *precs = l->data;
-	  smie_precs_to_prec2 (precs, override);
+	  smie_prec2_merge_precs (override, precs);
 	}
       g_list_free_full (resolvers, (GDestroyNotify) smie_precs_grammar_free);
     }
