@@ -1299,6 +1299,17 @@ smie_prec2_to_grammar (smie_prec2_grammar_t *prec2,
   return grammar;
 }
 
+/**
+ * smie_grammar_add_level:
+ * @grammar: a #smie_grammar_t object
+ * @symbol: a #smie_symbol_t object
+ * @left_prec: left precedence level
+ * @right_prec: right precedence level
+ *
+ * Assign precedence level for a symbol.
+ * Returns: %FALSE if the symbol already has a precedence level, %TRUE
+ *   otherwise
+ */
 gboolean
 smie_grammar_add_level (smie_grammar_t *grammar,
 			const smie_symbol_t *symbol,
@@ -1311,6 +1322,14 @@ smie_grammar_add_level (smie_grammar_t *grammar,
   return g_hash_table_insert (grammar->levels, (gpointer) symbol, level);
 }
 
+/**
+ * smie_grammar_get_symbol_class:
+ * @grammar: a #smie_grammar_t object
+ * @symbol: a #smie_symbol_t object
+ *
+ * Get the class of a symbol.
+ * Returns: a #smie_symbol_class_t value
+ */
 smie_symbol_class_t
 smie_grammar_get_symbol_class (smie_grammar_t *grammar,
 			       const smie_symbol_t *symbol)
@@ -1320,6 +1339,14 @@ smie_grammar_get_symbol_class (smie_grammar_t *grammar,
   return level ? level->symbol_class : SMIE_SYMBOL_CLASS_NEITHER;
 }
 
+/**
+ * smie_grammar_set_symbol_class:
+ * @grammar: a #smie_grammar_t object
+ * @symbol: a #smie_symbol_t object
+ * @symbol_class: type of symbol
+ *
+ * Set the class of @symbol to @symbol_class.
+ */
 void
 smie_grammar_set_symbol_class (smie_grammar_t *grammar,
 			       const smie_symbol_t *symbol,
@@ -1388,6 +1415,14 @@ smie_grammar_get_left_prec (smie_grammar_t *grammar,
   return level->left_prec;
 }
 
+/**
+ * smie_grammar_get_right_prec:
+ * @grammar: a #smie_grammar_t object
+ * @symbol: a #smie_symbol_t object
+ *
+ * Get the right precedence level of a symbol.
+ * Returns: an integer precedence level.
+ */
 gint
 smie_grammar_get_right_prec (smie_grammar_t *grammar,
 			     const smie_symbol_t *symbol)
