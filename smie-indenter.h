@@ -22,12 +22,61 @@
 
 G_BEGIN_DECLS
 
-typedef struct smie_indenter_t smie_indenter_t;
+typedef struct _smie_indenter_t smie_indenter_t;
+typedef struct _smie_cursor_functions_t smie_cursor_functions_t;
 
-typedef gunichar (*smie_get_char_function_t) (gpointer);
-
-typedef struct smie_cursor_functions_t smie_cursor_functions_t;
-struct smie_cursor_functions_t
+/**
+ * smie_cursor_functions_t:
+ * @forward_char: Move the cursor forward by a character, and return
+ *   %TRUE if the cursor moves, otherwise %FALSE.
+ * @backward_char: Move the cursor backward by a character, and return
+ *   %TRUE if the cursor moves, otherwise %FALSE.
+ * @forward_line: Move the cursor forward by a line, and return %TRUE
+ *   if the cursor moves, otherwise %FALSE.
+ * @backward_line: Move the cursor forward by a line, and return %TRUE
+ *   if the cursor moves, otherwise %FALSE.
+ * @forward_to_line_end: Move the cursor to the end of line.  If the
+ *   line ends with a newline character, place the cursor on that
+ *   character.  Return %TRUE if the cursor moves, otherwise %FALSE.
+ * @backward_to_line_start: Move the cursor to the beginning of line,
+ *   and return %TRUE if the cursor moves, otherwise %FALSE.
+ * @forward_comment: Move the cursor forward by skipping comments and
+ *   whitespace characters.  Place the cursor on the first non-comment
+ *   / non-whitespace character if any.  Otherwise move to the end of
+ *   buffer.  Return %TRUE if the cursor moves, otherwise %FALSE.
+ * @backward_comment: Move the cursor backward by skipping comments
+ *   and whitespace characters.  Place the cursor on the first
+ *   non-comment / non-whitespace character, if any.  Otherwise move to
+ *   the beginning of buffer.  Return %TRUE if the cursor moves,
+ *   otherwise %FALSE.
+ * @forward_token: Move the cursor to the start of next token, if any,
+ *   and returns the token between the previous cursor position and the
+ *   new cursor position.  If the cursor is already on the middle of a
+ *   token, return the partial string of the token.
+ * @backward_token: Move the cursor to the end of previous token, if any,
+ *   and returns the token between the previous cursor position and the
+ *   new cursor position.  If the cursor is already on the middle of a
+ *   token, return the partial string of the token.
+ * @is_start: Return %TRUE if the cursor is at the beginning of
+ *   buffer, otherwise %FALSE.
+ * @is_end: Return %TRUE if the cursor is at the end of buffer,
+ *   otherwise %FALSE.
+ * @starts_line: Return %TRUE if the cursor is at the beginning of
+ *   line, otherwise %FALSE.
+ * @ends_line: Return %TRUE if the cursor is at the end of line,
+ *   otherwise %FALSE.
+ * @get_offset: Return the integer offset of the current cursor.
+ * @get_line_offset: Return the integer offset of the current cursor,
+ *   counting from the beginning of line.
+ * @get_char: Return the character at the cursor position, if any.
+ *   Otherwise return (gunichar) -1.
+ * @push_context: Save the current cursor position to a stack.
+ * @pop_context: Restore the previous cursor position from a stack.
+ *
+ * Set of callback functions used by the indenter.  All those
+ * functions take a context object passed to smie_indenter_calculate().
+ */
+struct _smie_cursor_functions_t
 {
   gboolean (* forward_char) (gpointer);
   gboolean (* backward_char) (gpointer);

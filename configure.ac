@@ -25,7 +25,17 @@ if test "$enable_gtksourceview" != no; then
 fi
 AM_CONDITIONAL([ENABLE_GTKSOURCEVIEW], [test "$have_gtksourceview" = yes])
 
+dnl check for gtk-doc
+m4_ifdef([GTK_DOC_CHECK], [
+GTK_DOC_CHECK([1.14],[--flavour no-tmpl])
+],[
+AM_CONDITIONAL([ENABLE_GTK_DOC], false)
+])
+
 AC_CONFIG_MACRO_DIRS([m4])
 AC_CONFIG_HEADERS([config.h])
-AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([Makefile
+docs/Makefile
+docs/references/Makefile
+docs/references/libsmie/Makefile])
 AC_OUTPUT

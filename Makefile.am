@@ -1,3 +1,5 @@
+SUBDIRS = docs
+
 ACLOCAL_AMFLAGS = -I m4
 AM_YFLAGS = -d
 

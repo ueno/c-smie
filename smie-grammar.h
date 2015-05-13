@@ -22,45 +22,66 @@
 
 G_BEGIN_DECLS
 
-typedef struct smie_symbol_pool_t smie_symbol_pool_t;
-typedef struct smie_symbol_t smie_symbol_t;
-typedef struct smie_bnf_grammar_t smie_bnf_grammar_t;
-typedef struct smie_prec2_grammar_t smie_prec2_grammar_t;
-typedef struct smie_precs_grammar_t smie_precs_grammar_t;
-typedef struct smie_grammar_t smie_grammar_t;
+typedef struct _smie_symbol_pool_t smie_symbol_pool_t;
+typedef struct _smie_symbol_t smie_symbol_t;
+typedef struct _smie_bnf_grammar_t smie_bnf_grammar_t;
+typedef struct _smie_prec2_grammar_t smie_prec2_grammar_t;
+typedef struct _smie_precs_grammar_t smie_precs_grammar_t;
+typedef struct _smie_grammar_t smie_grammar_t;
 
-typedef enum smie_symbol_type_t smie_symbol_type_t;
-enum smie_symbol_type_t
+/**
+ * smie_symbol_type_t:
+ * @SMIE_SYMBOL_TERMINAL: a terminal symbol
+ * @SMIE_SYMBOL_TERMINAL_VARIABLE: a terminal symbol, without immediate value
+ * @SMIE_SYMBOL_NON_TERMINAL: a non-terminal symbol
+ */
+typedef enum
   {
     SMIE_SYMBOL_TERMINAL,
     SMIE_SYMBOL_TERMINAL_VARIABLE,
     SMIE_SYMBOL_NON_TERMINAL
-  };
+  } smie_symbol_type_t;
 
-typedef enum smie_symbol_class_t smie_symbol_class_t;
-enum smie_symbol_class_t
+/**
+ * smie_symbol_class_t:
+ * @SMIE_SYMBOL_CLASS_NEITHER: neither an opener nor a closer
+ * @SMIE_SYMBOL_CLASS_OPENER: an opener
+ * @SMIE_SYMBOL_CLASS_CLOSER: a closer
+ */
+typedef enum
   {
     SMIE_SYMBOL_CLASS_NEITHER,
     SMIE_SYMBOL_CLASS_OPENER,
     SMIE_SYMBOL_CLASS_CLOSER
-  };
+  } smie_symbol_class_t;
 
-typedef enum smie_prec2_type_t smie_prec2_type_t;
-enum smie_prec2_type_t
+/**
+ * smie_prec2_type_t:
+ * @SMIE_PREC2_EQ: both symbols have the same precedence
+ * @SMIE_PREC2_LT: the right symbol has a higher precedence
+ * @SMIE_PREC2_GT: the left symbol has a higher precedence
+ */
+typedef enum
   {
     SMIE_PREC2_EQ,
     SMIE_PREC2_LT,
     SMIE_PREC2_GT
-  };
+  } smie_prec2_type_t;
 
-typedef enum smie_prec_type_t smie_prec_type_t;
-enum smie_prec_type_t
+/**
+ * smie_prec_type_t:
+ * @SMIE_PREC_LEFT: left associative
+ * @SMIE_PREC_RIGHT: right associative
+ * @SMIE_PREC_ASSOC: associative
+ * @SMIE_PREC_NON_ASSOC: not associative
+ */
+typedef enum
   {
     SMIE_PREC_LEFT,
     SMIE_PREC_RIGHT,
     SMIE_PREC_ASSOC,
     SMIE_PREC_NON_ASSOC
-  };
+  } smie_prec_type_t;
 
 smie_symbol_pool_t *smie_symbol_pool_alloc (void);
 void smie_symbol_pool_free (smie_symbol_pool_t *pool);

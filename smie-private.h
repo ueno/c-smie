@@ -22,16 +22,16 @@
 
 G_BEGIN_DECLS
 
-struct smie_symbol_pool_t
+struct _smie_symbol_pool_t
 {
   volatile gint ref_count;
   GHashTable *allocated;
 };
 
-struct smie_symbol_t
+struct _smie_symbol_t
 {
   gchar *name;
-  enum smie_symbol_type_t type;
+  smie_symbol_type_t type;
 };
 
 struct smie_rule_t
@@ -44,21 +44,21 @@ struct smie_rule_list_t
   GList *rules;
 };
 
-struct smie_bnf_grammar_t
+struct _smie_bnf_grammar_t
 {
-  struct smie_symbol_pool_t *pool;
+  smie_symbol_pool_t *pool;
   GHashTable *rules;
 };
 
 struct smie_prec2_t
 {
-  const struct smie_symbol_t *left;
-  const struct smie_symbol_t *right;
+  const smie_symbol_t *left;
+  const smie_symbol_t *right;
 };
 
-struct smie_prec2_grammar_t
+struct _smie_prec2_grammar_t
 {
-  struct smie_symbol_pool_t *pool;
+  smie_symbol_pool_t *pool;
   GHashTable *prec2;
   GHashTable *classes;
   GHashTable *pairs;
@@ -67,13 +67,13 @@ struct smie_prec2_grammar_t
 
 struct smie_prec_t
 {
-  enum smie_prec_type_t type;
+  smie_prec_type_t type;
   GList *op;
 };
 
-struct smie_precs_grammar_t
+struct _smie_precs_grammar_t
 {
-  struct smie_symbol_pool_t *pool;
+  smie_symbol_pool_t *pool;
   GList *precs;
 };
 
@@ -91,7 +91,7 @@ struct smie_func2_t
 
 struct smie_func_t
 {
-  const struct smie_symbol_t *symbol;
+  const smie_symbol_t *symbol;
   enum smie_func_type_t type;
 };
 
@@ -99,12 +99,12 @@ struct smie_level_t
 {
   gint left_prec;
   gint right_prec;
-  enum smie_symbol_class_t symbol_class;
+  smie_symbol_class_t symbol_class;
 };
 
-struct smie_grammar_t
+struct _smie_grammar_t
 {
-  struct smie_symbol_pool_t *pool;
+  smie_symbol_pool_t *pool;
   GHashTable *levels;
   GHashTable *pairs;
   GHashTable *ends;
@@ -112,8 +112,8 @@ struct smie_grammar_t
 
 struct smie_grammar_parser_context_t
 {
-  struct smie_bnf_grammar_t *bnf;
-  struct smie_precs_grammar_t *precs;
+  smie_bnf_grammar_t *bnf;
+  smie_precs_grammar_t *precs;
   GList *resolvers;
   const gchar *input;
 };

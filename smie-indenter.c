@@ -22,7 +22,18 @@
 
 #include "smie-indenter.h"
 
-struct smie_indenter_t
+/**
+ * SECTION:smie-indenter
+ * @short_description: entry point of indentation engine
+ * @title: Indenter
+ * @section_id:
+ * @stability: Unstable
+ * @include: smie.h
+ *
+ * The indenter object provides generic indentatin computation.
+ */
+
+struct _smie_indenter_t
 {
   volatile gint ref_count;
 
@@ -31,18 +42,27 @@ struct smie_indenter_t
   gint step;
 };
 
-struct smie_indenter_t *
+/**
+ * smie_indenter_new:
+ * @grammar: a #smie_grammar_t object
+ * @step: a unit of a single indentation
+ * @functions: a #smie_cursor_functions_t
+ *
+ * Create a new indenter.
+ * Returns: a new #smie_indenter_t object
+ */
+smie_indenter_t *
 smie_indenter_new (smie_grammar_t *grammar,
 		   gint step,
 		   smie_cursor_functions_t *functions)
 {
-  struct smie_indenter_t *result;
+  smie_indenter_t *result;
 
   g_return_val_if_fail (grammar, NULL);
   g_return_val_if_fail (step >= 0, NULL);
   g_return_val_if_fail (functions, NULL);
 
-  result = g_new0 (struct smie_indenter_t, 1);
+  result = g_new0 (smie_indenter_t, 1);
   result->ref_count = 1;
   result->grammar = grammar;
   result->step = step;
@@ -51,14 +71,21 @@ smie_indenter_new (smie_grammar_t *grammar,
 }
 
 static void
-smie_indenter_free (struct smie_indenter_t *indenter)
+smie_indenter_free (smie_indenter_t *indenter)
 {
   smie_grammar_free (indenter->grammar);
   g_free (indenter);
 }
 
-struct smie_indenter_t *
-smie_indenter_ref (struct smie_indenter_t *indenter)
+/**
+ * smie_indenter_ref:
+ * @indenter: a #smie_indenter_t object
+ *
+ * Increment reference count of @indenter.
+ * Returns: @indenter
+ */
+smie_indenter_t *
+smie_indenter_ref (smie_indenter_t *indenter)
 {
   g_return_val_if_fail (indenter, NULL);
   g_return_val_if_fail (indenter->ref_count > 0, NULL);
@@ -66,8 +93,15 @@ smie_indenter_ref (struct smie_indenter_t *indenter)
   return indenter;
 }
 
+/**
+ * smie_indenter_unref:
+ * @indenter: a #smie_indenter_t object
+ *
+ * Decrement reference count of @indenter.  If the count reaches zero,
+ * the memory allocated for @indenter will be released.
+ */
 void
-smie_indenter_unref (struct smie_indenter_t *indenter)
+smie_indenter_unref (smie_indenter_t *indenter)
 {
   g_return_if_fail (indenter);
   g_return_if_fail (indenter->ref_count > 0);
@@ -76,7 +110,7 @@ smie_indenter_unref (struct smie_indenter_t *indenter)
 }
 
 static gboolean
-smie_indent_starts_line (struct smie_indenter_t *indenter,
+smie_indent_starts_line (smie_indenter_t *indenter,
 			 gpointer context)
 {
   if (indenter->functions->starts_line (context))
@@ -97,10 +131,10 @@ smie_indent_starts_line (struct smie_indenter_t *indenter,
   return TRUE;
 }
 
-typedef gint (* smie_indent_function_t) (struct smie_indenter_t *, gpointer);
+typedef gint (* smie_indent_function_t) (smie_indenter_t *, gpointer);
 
 static gint
-smie_indent_virtual (struct smie_indenter_t *indenter,
+smie_indent_virtual (smie_indenter_t *indenter,
 		     gpointer context)
 {
   if (smie_indent_starts_line (indenter, context))
@@ -109,7 +143,7 @@ smie_indent_virtual (struct smie_indenter_t *indenter,
 }
 
 static gint
-smie_indent_bob (struct smie_indenter_t *indenter, gpointer context)
+smie_indent_bob (smie_indenter_t *indenter, gpointer context)
 {
   gboolean result;
 
@@ -124,7 +158,7 @@ smie_indent_bob (struct smie_indenter_t *indenter, gpointer context)
 }
 
 static gint
-smie_indent_keyword (struct smie_indenter_t *indenter, gpointer context)
+smie_indent_keyword (smie_indenter_t *indenter, gpointer context)
 {
   gint offset = indenter->functions->get_offset (context), offset2;
   gchar *token, *parent_token;
@@ -227,7 +261,7 @@ smie_indent_keyword (struct smie_indenter_t *indenter, gpointer context)
 }
 
 static gint
-smie_indent_after_keyword (struct smie_indenter_t *indenter, gpointer context)
+smie_indent_after_keyword (smie_indenter_t *indenter, gpointer context)
 {
   gchar *token;
   smie_symbol_pool_t *pool;
@@ -284,9 +318,16 @@ static smie_indent_function_t functions[] =
     smie_indent_after_keyword
   };
 
+/**
+ * smie_indenter_calculate:
+ * @indenter: a #smie_indenter_t object
+ * @context: cursor context
+ *
+ * Calculate the indentation level of the current line.
+ * Returns: an indent value, or -1 if it is not determined.
+ */
 gint
-smie_indenter_calculate (struct smie_indenter_t *indenter,
-			 gpointer context)
+smie_indenter_calculate (smie_indenter_t *indenter, gpointer context)
 {
   gint i;
 

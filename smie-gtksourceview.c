@@ -24,6 +24,18 @@
 
 #include <gtksourceview/gtksource.h>
 
+/**
+ * SECTION:smie-gtksourceview
+ * @short_description: adapter to GtkSourceView
+ * @title: GtkSourceView adapter
+ * @section_id:
+ * @stability: Unstable
+ * @include: smie-gtksourceview.h
+ *
+ * The GtkSourceView adapter provides a basic #smie_cursor_functions_t
+ * implementation defined using #GtkTextIter and #GtkSourceBuffer.
+ */
+
 static gboolean
 smie_gtk_source_buffer_forward_char (gpointer data)
 {
