@@ -420,7 +420,7 @@ smie_prec2_grammar_set_symbol_class (smie_prec2_grammar_t *prec2,
  * @error: return location of an error
  *
  * Load PREC2 grammar from a string.
- * Returns: %TRUE if succeed, otherwise %FALSE.
+ * Returns: %TRUE on success, otherwise %FALSE.
  */
 gboolean
 smie_prec2_grammar_load (smie_prec2_grammar_t *prec2,
@@ -554,6 +554,13 @@ smie_precs_to_prec2 (smie_precs_grammar_t *precs,
     }
 }
 
+/**
+ * smie_grammar_alloc:
+ * @pool: a #smie_symbol_pool_t object
+ *
+ * Create a new grammar.
+ * Returns: (transfer full): a new #smie_grammar_t object
+ */
 smie_grammar_t *
 smie_grammar_alloc (smie_symbol_pool_t *pool)
 {
@@ -566,6 +573,12 @@ smie_grammar_alloc (smie_symbol_pool_t *pool)
   return result;
 }
 
+/**
+ * smie_grammar_free:
+ * @grammar: a #smie_grammar_t object
+ *
+ * Release all memory allocated for a grammar.
+ */
 void
 smie_grammar_free (smie_grammar_t *grammar)
 {
@@ -578,6 +591,13 @@ smie_grammar_free (smie_grammar_t *grammar)
   g_free (grammar);
 }
 
+/**
+ * smie_grammar_get_symbol_pool:
+ * @grammar: a #smie_grammar_t object
+ *
+ * Get the symbol pool used in @grammar.
+ * Returns: (transfer none): a #smie_symbol_pool_t object
+ */
 smie_symbol_pool_t *
 smie_grammar_get_symbol_pool (smie_grammar_t *grammar)
 {
@@ -704,6 +724,16 @@ smie_debug_dump_op_set (GHashTable *op, const char *name)
 }
 #endif
 
+/**
+ * smie_bnf_to_prec2:
+ * @bnf: a #smie_bnf_grammar_t object
+ * @prec2: a #smie_prec2_grammar_t object
+ * @resolvers: (transfer full) (element-type smie_precs_grammar_t): a
+ *   list of PRECS grammars
+ *
+ * Populate a PREC2 grammar from a BNF grammar and PRECS grammars.
+ * Returns: %TRUE on success, %FALSE otherwise
+ */
 gboolean
 smie_bnf_to_prec2 (smie_bnf_grammar_t *bnf,
 		   smie_prec2_grammar_t *prec2,
@@ -1008,6 +1038,15 @@ smie_func2_equal (gconstpointer a, gconstpointer b)
   return smie_func_equal (fa->f, fb->f) && smie_func_equal (fa->g, fb->g);
 }
 
+/**
+ * smie_prec2_to_grammar:
+ * @prec2: a #smie_prec2_grammar_t object
+ * @grammar: a #smie_grammar_t object
+ * @error: return location of an error
+ *
+ * Populate a grammar from a PRECS grammar.
+ * Returns: %TRUE on success, %FALSE otherwise
+ */
 gboolean
 smie_prec2_to_grammar (smie_prec2_grammar_t *prec2,
 		       smie_grammar_t *grammar,
