@@ -92,7 +92,6 @@ set_indenter (EditorApplicationWindow *window, const gchar *filename)
   smie_grammar_t *grammar;
   const gchar *contents;
   GError *error;
-  gboolean result;
 
   error = NULL;
   mapped_file = g_mapped_file_new (filename, FALSE, &error);
@@ -105,11 +104,10 @@ set_indenter (EditorApplicationWindow *window, const gchar *filename)
 
   pool = smie_symbol_pool_alloc ();
   error = NULL;
-  prec2 = smie_prec2_grammar_alloc (pool);
   contents = (const gchar *) g_mapped_file_get_contents (mapped_file);
-  result = smie_prec2_grammar_load (prec2, contents, &error);
+  prec2 = smie_prec2_grammar_load (contents, &error);
   g_mapped_file_unref (mapped_file);
-  if (!result)
+  if (!prec2)
     {
       g_warning ("Error while loading the grammar: %s", error->message);
       g_error_free (error);
@@ -118,10 +116,9 @@ set_indenter (EditorApplicationWindow *window, const gchar *filename)
     }
 
   error = NULL;
-  grammar = smie_grammar_alloc (pool);
-  result = smie_prec2_to_grammar (prec2, grammar, &error);
+  grammar = smie_prec2_to_grammar (prec2, &error);
   smie_prec2_grammar_free (prec2);
-  if (!result)
+  if (!grammar)
     {
       g_warning ("Error while converting prec2 to grammar: %s", error->message);
       g_error_free (error);

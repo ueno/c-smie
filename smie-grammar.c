@@ -415,34 +415,33 @@ smie_prec2_grammar_set_symbol_class (smie_prec2_grammar_t *prec2,
 
 /**
  * smie_prec2_grammar_load:
- * @prec2: a #smie_prec2_grammar_t object
  * @input: a string representation of a PREC2 grammar
  * @error: return location of an error
  *
  * Load PREC2 grammar from a string.
- * Returns: %TRUE on success, otherwise %FALSE.
+ * Returns: (transfer full): a new #smie_prec2_grammar_t object
  */
-gboolean
-smie_prec2_grammar_load (smie_prec2_grammar_t *prec2,
-			 const gchar *input,
-			 GError **error)
+smie_prec2_grammar_t *
+smie_prec2_grammar_load (const gchar *input, GError **error)
 {
   struct smie_grammar_parser_context_t context;
-  gboolean result;
+  smie_symbol_pool_t *pool = smie_symbol_pool_alloc ();
+  smie_prec2_grammar_t *prec2;
   memset (&context, 0, sizeof (struct smie_grammar_parser_context_t));
   context.input = input;
-  context.bnf = smie_bnf_grammar_alloc (prec2->pool);
+  context.bnf = smie_bnf_grammar_alloc (pool);
+  smie_symbol_pool_unref (pool);
   if (yyparse (&context, error) != 0)
     {
       smie_bnf_grammar_free (context.bnf);
       g_list_free_full (context.resolvers,
 			(GDestroyNotify) smie_precs_grammar_free);
-      return FALSE;
+      return NULL;
     }
 
-  result = smie_bnf_to_prec2 (context.bnf, prec2, context.resolvers, error);
+  prec2 = smie_bnf_to_prec2 (context.bnf, context.resolvers, error);
   smie_bnf_grammar_free (context.bnf);
-  return result;
+  return prec2;
 }
 
 /**
@@ -727,16 +726,14 @@ smie_debug_dump_op_set (GHashTable *op, const char *name)
 /**
  * smie_bnf_to_prec2:
  * @bnf: a #smie_bnf_grammar_t object
- * @prec2: a #smie_prec2_grammar_t object
  * @resolvers: (transfer full) (element-type smie_precs_grammar_t): a
  *   list of PRECS grammars
  *
  * Populate a PREC2 grammar from a BNF grammar and PRECS grammars.
- * Returns: %TRUE on success, %FALSE otherwise
+ * Returns: a new #smie_prec2_grammar_t object
  */
-gboolean
+smie_prec2_grammar_t *
 smie_bnf_to_prec2 (smie_bnf_grammar_t *bnf,
-		   smie_prec2_grammar_t *prec2,
 		   GList *resolvers,
 		   GError **error)
 {
@@ -745,6 +742,7 @@ smie_bnf_to_prec2 (smie_bnf_grammar_t *bnf,
   GHashTableIter iter;
   smie_prec2_grammar_t *override = NULL;
   gpointer value;
+  smie_prec2_grammar_t *prec2 = smie_prec2_grammar_alloc (bnf->pool);
 
   if (resolvers)
     {
@@ -890,7 +888,7 @@ smie_bnf_to_prec2 (smie_bnf_grammar_t *bnf,
     smie_prec2_grammar_free (override);
   g_hash_table_unref (first_op);
   g_hash_table_unref (last_op);
-  return TRUE;
+  return prec2;
 }
 
 #ifdef DEBUG
@@ -1041,15 +1039,13 @@ smie_func2_equal (gconstpointer a, gconstpointer b)
 /**
  * smie_prec2_to_grammar:
  * @prec2: a #smie_prec2_grammar_t object
- * @grammar: a #smie_grammar_t object
  * @error: return location of an error
  *
  * Populate a grammar from a PRECS grammar.
- * Returns: %TRUE on success, %FALSE otherwise
+ * Returns: (transfer full): a #smie_grammar_t object
  */
-gboolean
+smie_grammar_t *
 smie_prec2_to_grammar (smie_prec2_grammar_t *prec2,
-		       smie_grammar_t *grammar,
 		       GError **error)
 {
   GHashTable *allocated = g_hash_table_new_full (smie_func_hash,
@@ -1070,7 +1066,7 @@ smie_prec2_to_grammar (smie_prec2_grammar_t *prec2,
   gint iteration_count;
   GHashTableIter iter;
   gpointer key, value;
-  gboolean result = TRUE;
+  smie_grammar_t *grammar = smie_grammar_alloc (prec2->pool);
 
   /* Allocate all possible functions.  */
   g_hash_table_iter_init (&iter, grammar->pool->allocated);
@@ -1207,7 +1203,8 @@ smie_prec2_to_grammar (smie_prec2_grammar_t *prec2,
 		       "cycle found in prec2 grammar");
 	  g_hash_table_unref (equalities);
 	  g_hash_table_unref (inequalities);
-	  result = FALSE;
+	  smie_grammar_free (grammar);
+	  grammar = NULL;
 	  goto out;
 	}
 
@@ -1299,7 +1296,7 @@ smie_prec2_to_grammar (smie_prec2_grammar_t *prec2,
  out:
   g_hash_table_unref (assigned);
   g_hash_table_unref (allocated);
-  return result;
+  return grammar;
 }
 
 gboolean

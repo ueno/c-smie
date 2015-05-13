@@ -124,9 +124,8 @@ gboolean smie_prec2_grammar_add_pair (smie_prec2_grammar_t *prec2,
 gboolean smie_prec2_grammar_set_symbol_class (smie_prec2_grammar_t *prec2,
 					      const smie_symbol_t *symbol,
 					      smie_symbol_class_t symbol_class);
-gboolean smie_prec2_grammar_load (smie_prec2_grammar_t *prec2,
-				  const gchar *input,
-				  GError **error);
+smie_prec2_grammar_t *smie_prec2_grammar_load (const gchar *input,
+					       GError **error);
 
 smie_grammar_t *smie_grammar_alloc (smie_symbol_pool_t *pool);
 void smie_grammar_free (smie_grammar_t *grammar);
@@ -154,13 +153,11 @@ gint smie_grammar_get_left_prec (smie_grammar_t *grammar,
 gint smie_grammar_get_right_prec (smie_grammar_t *grammar,
 				  const smie_symbol_t *symbol);
 
-gboolean smie_bnf_to_prec2 (smie_bnf_grammar_t *bnf,
-			    smie_prec2_grammar_t *prec2,
-			    GList *resolvers,
-			    GError **error);
-gboolean smie_prec2_to_grammar (smie_prec2_grammar_t *prec2,
-				smie_grammar_t *grammar,
-				GError **error);
+smie_prec2_grammar_t *smie_bnf_to_prec2 (smie_bnf_grammar_t *bnf,
+					 GList *resolvers,
+					 GError **error);
+smie_grammar_t *smie_prec2_to_grammar (smie_prec2_grammar_t *prec2,
+				       GError **error);
 
 typedef gchar * (*smie_next_token_function_t) (gpointer);
 

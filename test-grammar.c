@@ -215,9 +215,9 @@ test_construct_prec2 (struct fixture *fixture, gconstpointer user_data)
   smie_prec2_grammar_t *expected, *actual;
   GError *error;
   expected = populate_prec2_grammar (fixture->pool);
-  actual = smie_prec2_grammar_alloc (fixture->pool);
   error = NULL;
-  g_assert (smie_bnf_to_prec2 (fixture->bnf, actual, NULL, &error));
+  actual = smie_bnf_to_prec2 (fixture->bnf, NULL, &error);
+  g_assert (actual);
   g_assert_no_error (error);
   g_assert (smie_test_prec2_grammar_equal (expected, actual));
   smie_prec2_grammar_free (expected);
@@ -246,7 +246,8 @@ test_construct_grammar (struct fixture *fixture, gconstpointer user_data)
   expected = populate_grammar (fixture->pool);
   actual = smie_grammar_alloc (fixture->pool);
   error = NULL;
-  g_assert (smie_prec2_to_grammar (fixture->prec2, actual, &error));
+  actual = smie_prec2_to_grammar (fixture->prec2, &error);
+  g_assert (actual);
   g_assert_no_error (error);
   g_assert (smie_test_grammar_equal (expected, actual));
   smie_grammar_free (expected);
