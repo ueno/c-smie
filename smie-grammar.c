@@ -1319,6 +1319,14 @@ smie_grammar_is_pair_end (smie_grammar_t *grammar,
     && g_hash_table_contains (grammar->ends, (gpointer) closer_symbol);
 }
 
+/**
+ * smie_grammar_is_keyword:
+ * @grammar: a #smie_grammar_t object
+ * @symbol: a #smie_symbol_t object
+ *
+ * Check if a symbol is defined as a keyword in a grammar.
+ * Returns: %TRUE if @symbol is keyword, %FALSE otherwise.
+ */
 gboolean
 smie_grammar_is_keyword (smie_grammar_t *grammar,
 			 const smie_symbol_t *symbol)
@@ -1326,6 +1334,14 @@ smie_grammar_is_keyword (smie_grammar_t *grammar,
   return g_hash_table_contains (grammar->levels, (gpointer) symbol);
 }
 
+/**
+ * smie_grammar_get_left_prec:
+ * @grammar: a #smie_grammar_t object
+ * @symbol: a #smie_symbol_t object
+ *
+ * Get the left precedence level of a symbol.
+ * Returns: an integer precedence level.
+ */
 gint
 smie_grammar_get_left_prec (smie_grammar_t *grammar,
 			    const smie_symbol_t *symbol)
