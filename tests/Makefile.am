@@ -28,4 +28,6 @@ editor_LDADD = libsmiegtksourceview.la libsmie.la $(DEPS_LIBS) \
 
 editor-resources.c: tests/editor.gresource.xml tests/editor.ui
 	$(AM_V_GEN) $(GLIB_COMPILE_RESOURCES) --target=$@ --sourcedir=$(top_srcdir)/tests --generate-source $(top_srcdir)/tests/editor.gresource.xml
+
+EXTRA_DIST += tests/editor.gresource.xml tests/editor.ui
 endif
