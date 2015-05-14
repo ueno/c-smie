@@ -61,7 +61,7 @@
  * resolvers = *resolver
  * resolver = "%precs" "{" precs "}"
  * precs = ("left" / "right" / "assoc" / "nonassoc")
- *   TERMINAL *(WSP terminal) ";"
+ *   TERMINAL *(WSP TERMINAL) ";"
  *
  * symbols = *symbol
  * symbol = NONTERMINAL / TERMINAL / TERMINALVAR
