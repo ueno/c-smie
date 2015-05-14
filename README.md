@@ -17,3 +17,5 @@ To run an interactive demo (requires GtkSourceView):
 ```
 $ ./editor --grammar tests/test.grammar tests/test.input
 ```
+tests/test.grammar defines a shell-script like grammar.  Hit TAB on a
+line to indent.

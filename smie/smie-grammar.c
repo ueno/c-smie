@@ -47,6 +47,58 @@
  * A PREC2 grammar can be computed from a BNF grammar and optional
  * PRECS grammars, which are used as conflict resolvers.  Then the
  * PREC2 grammar can be converted into the final grammar.
+ *
+ * A PREC2 grammar can be loaded from a file, in the following form
+ * (in the RFC2234 format):
+ *
+ * |[
+ * grammar = *rules *resolvers
+ *
+ * rules = *rule
+ * rule = nonterminal ":" sentences ";"
+ * sentences = symbols *("|" symbols)
+ *
+ * resolvers = *resolver
+ * resolver = "%precs" "{" precs "}"
+ * precs = ("left" / "right" / "assoc" / "nonassoc")
+ *   TERMINAL *(WSP terminal) ";"
+ *
+ * symbols = *symbol
+ * symbol = NONTERMINAL / TERMINAL / TERMINALVAR
+ *
+ * NONTERMINAL = %x61-7a ; lowercase letters
+ * TERMINAL = DQUOTE *(%x20-21 / %x23-7E) DQUOTE
+ *     ; quoted string of SP and VCHAR without DQUOTE
+ * TERMINALVAR = %x41-5a ; uppercase letters
+ * ]|
+ *
+ * An example of grammar:
+ * |[
+ *  cmd	: "case" exp "in" branches "esac"
+ * 	| "if" cmd "then" cmd "fi"
+ * 	| "if" cmd "then" cmd "else" cmd "fi"
+ * 	| "while" cmd "do" cmd "done"
+ * 	| "until" cmd "do" cmd "done"
+ * 	| "for" exp "in" cmd "do" cmd "done"
+ * 	| "for" exp "do" cmd "done"
+ * 	| cmd "|" cmd
+ * 	| cmd "&&" cmd
+ * 	| cmd "||" cmd
+ * 	| cmd ";" cmd
+ * 	;
+ *
+ * exp	: EXP
+ * 	;
+ *
+ * branches: BRANCHES
+ * 	;
+ *
+ * %precs {
+ *        assoc ";" "|";
+ *        assoc "&&" "||";
+ * }
+ * ]|
+ *
  */
 
 static guint
@@ -1546,11 +1598,11 @@ smie_next_sexp (smie_grammar_t *grammar,
 		    stack = g_list_prepend (stack, level);
 		}
 	      else if (op_forward (level, &prec_value))
-		break;
+		return TRUE;
 	      else if (!smie_is_associative (level))
 		stack = g_list_prepend (NULL, level);
 	      else if (smie_is_associative (level2))
-		return TRUE;
+		return FALSE;
 	      else
 		stack = g_list_prepend (NULL, level2);
 	    }
@@ -1571,7 +1623,7 @@ smie_next_sexp (smie_grammar_t *grammar,
  * Skip over an S-expression forward.  If @symbol is not %NULL, it
  * means to parse as if we had just successfully passed this symbol.
  *
- * Returns: %TRUE if the cursor moves, %FALSE otherwise.
+ * Returns: %TRUE if we skipped a paren-like pair, %FALSE otherwise.
  */
 gboolean
 smie_forward_sexp (smie_grammar_t *grammar,
@@ -1597,7 +1649,7 @@ smie_forward_sexp (smie_grammar_t *grammar,
  * Skip over an S-expression backward.  If @symbol is not %NULL, it
  * means to parse as if we had just successfully passed this symbol.
  *
- * Returns: %TRUE if the cursor moves, %FALSE otherwise
+ * Returns: %TRUE if we skipped a paren-like pair, %FALSE otherwise
  */
 gboolean
 smie_backward_sexp (smie_grammar_t *grammar,
