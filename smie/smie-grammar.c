@@ -479,6 +479,7 @@ smie_prec2_grammar_load (const gchar *input, GError **error)
   struct smie_grammar_parser_context_t context;
   smie_symbol_pool_t *pool = smie_symbol_pool_alloc ();
   smie_prec2_grammar_t *prec2;
+
   memset (&context, 0, sizeof (struct smie_grammar_parser_context_t));
   context.input = input;
   context.bnf = smie_bnf_grammar_alloc (pool);
@@ -537,7 +538,7 @@ smie_precs_grammar_free (smie_precs_grammar_t *precs)
  * @precs: a #smie_precs_grammar_t object
  * @type: a #smie_prec_type_t value
  * @symbols: (transfer full) (element-type smie_symbol_t): a list of
- * operator symbols
+ *   operator symbols
  *
  * Assign precedence type @type to each symbol in @symbols.
  */
@@ -548,7 +549,7 @@ smie_precs_grammar_add_prec (smie_precs_grammar_t *precs,
 {
   struct smie_prec_t *prec = g_new0 (struct smie_prec_t, 1);
   prec->type = type;
-  prec->op = g_list_append (prec->op, symbols);
+  prec->op = symbols;
   precs->precs = g_list_append (precs->precs, prec);
 }
 
@@ -561,37 +562,48 @@ smie_prec2_merge_precs (smie_prec2_grammar_t *prec2,
     {
       struct smie_prec_t *prec = l->data;
       smie_prec_type_t type = prec->type;
-      smie_symbol_t *op = prec->op->data;
       GList *l2 = prec->op;
+      smie_prec2_type_t selfrule;
+
+      switch (type)
+	{
+	case SMIE_PREC_LEFT:
+	  selfrule = SMIE_PREC2_GT;
+	  break;
+	case SMIE_PREC_RIGHT:
+	  selfrule = SMIE_PREC2_LT;
+	  break;
+	case SMIE_PREC_ASSOC:
+	  selfrule = SMIE_PREC2_EQ;
+	  break;
+	default:
+	  break;
+	}
+
       for (; l2; l2 = l2->next)
 	{
-	  smie_symbol_t *other_op = l2->data;
-	  GList *l3;
 	  smie_prec_type_t op1, op2;
-	  switch (type)
+	  GList *l4;
+
+	  if (type != SMIE_PREC_NON_ASSOC)
 	    {
-	    case SMIE_PREC_LEFT:
-	      smie_prec2_grammar_add_rule (prec2, op, other_op, SMIE_PREC2_GT,
-					   NULL);
-	      break;
-	    case SMIE_PREC_RIGHT:
-	      smie_prec2_grammar_add_rule (prec2, op, other_op, SMIE_PREC2_LT,
-					   NULL);
-	      break;
-	    case SMIE_PREC_ASSOC:
-	      smie_prec2_grammar_add_rule (prec2,
-					   op, other_op, SMIE_PREC2_EQ,
-					   NULL);
-	      break;
-	    default:
-	      break;
+	      GList *l3 = prec->op;
+	      for (; l3; l3 = l3->next)
+		{
+		  smie_symbol_t *symbol = l2->data;
+		  smie_symbol_t *other_symbol = l3->data;
+		  smie_prec2_grammar_add_rule (prec2,
+					       symbol, other_symbol,
+					       selfrule,
+					       NULL);
+		}
 	    }
 
 	  op1 = SMIE_PREC2_LT;
 	  op2 = SMIE_PREC2_GT;
-	  for (l3 = precs->precs; l3; l3 = l3->next)
+	  for (l4 = precs->precs; l4; l4 = l4->next)
 	    {
-	      struct smie_prec_t *other_prec = l3->data;
+	      struct smie_prec_t *other_prec = l4->data;
 	      if (prec == other_prec)
 		{
 		  op1 = SMIE_PREC2_GT;
@@ -599,13 +611,20 @@ smie_prec2_merge_precs (smie_prec2_grammar_t *prec2,
 		}
 	      else
 		{
-		  GList *l4 = other_prec->op;
-		  other_op = l4->data;
-		  for (; l4; l4 = l4->next)
+		  smie_symbol_t *symbol = l2->data;
+		  GList *l5 = other_prec->op;
+		  for (; l5; l5 = l5->next)
 		    {
-		      smie_prec2_grammar_add_rule (prec2, op, other_op, op2,
+		      smie_symbol_t *other_symbol = l5->data;
+		      smie_prec2_grammar_add_rule (prec2,
+						   symbol,
+						   other_symbol,
+						   op2,
 						   NULL);
-		      smie_prec2_grammar_add_rule (prec2, other_op, op, op1,
+		      smie_prec2_grammar_add_rule (prec2,
+						   other_symbol,
+						   symbol,
+						   op1,
 						   NULL);
 		    }
 		}
@@ -809,12 +828,13 @@ smie_bnf_to_prec2 (smie_bnf_grammar_t *bnf,
   if (resolvers)
     {
       GList *l;
-      override = smie_prec2_grammar_alloc (smie_symbol_pool_ref (prec2->pool));
+      override = smie_prec2_grammar_alloc (prec2->pool);
       for (l = resolvers; l; l = l->next)
 	{
 	  smie_precs_grammar_t *precs = l->data;
 	  smie_prec2_merge_precs (override, precs);
 	}
+      smie_debug_dump_prec2_grammar (override);
       g_list_free_full (resolvers, (GDestroyNotify) smie_precs_grammar_free);
     }
 
@@ -1304,6 +1324,8 @@ smie_prec2_to_grammar (smie_prec2_grammar_t *prec2,
 					     NULL, &value))
 	g_hash_table_insert (assigned, (gpointer) funcs->f, value);
     }
+  g_hash_table_unref (equalities);
+
   g_hash_table_iter_init (&iter, transitive);
   while (g_hash_table_iter_next (&iter, &key, &value))
     {

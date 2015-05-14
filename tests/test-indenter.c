@@ -64,8 +64,8 @@ setup (struct fixture *fixture, gconstpointer user_data)
 
   error = NULL;
   grammar = smie_prec2_to_grammar (prec2, &error);
-  g_assert (grammar);
   g_assert_no_error (error);
+  g_assert (grammar);
   smie_prec2_grammar_free (prec2);
 
   fixture->indenter = smie_indenter_new (grammar,

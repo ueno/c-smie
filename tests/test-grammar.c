@@ -243,7 +243,6 @@ test_construct_grammar (struct fixture *fixture, gconstpointer user_data)
   smie_grammar_t *expected, *actual;
   GError *error;
   expected = populate_grammar (fixture->pool);
-  actual = smie_grammar_alloc (fixture->pool);
   error = NULL;
   actual = smie_prec2_to_grammar (fixture->prec2, &error);
   g_assert (actual);
