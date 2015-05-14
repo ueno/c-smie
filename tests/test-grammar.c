@@ -218,7 +218,7 @@ test_construct_prec2 (struct fixture *fixture, gconstpointer user_data)
   actual = smie_bnf_to_prec2 (fixture->bnf, NULL, &error);
   g_assert (actual);
   g_assert_no_error (error);
-  g_assert (smie_test_prec2_grammar_equal (expected, actual));
+  g_assert (test_common_prec2_grammar_equal (expected, actual));
   smie_prec2_grammar_free (expected);
   smie_prec2_grammar_free (actual);
 }
@@ -248,7 +248,7 @@ test_construct_grammar (struct fixture *fixture, gconstpointer user_data)
   actual = smie_prec2_to_grammar (fixture->prec2, &error);
   g_assert (actual);
   g_assert_no_error (error);
-  g_assert (smie_test_grammar_equal (expected, actual));
+  g_assert (test_common_grammar_equal (expected, actual));
   smie_grammar_free (expected);
   smie_grammar_free (actual);
 }
@@ -270,34 +270,34 @@ teardown_movement (struct fixture *fixture, gconstpointer user_data)
 static void
 test_movement_forward (struct fixture *fixture, gconstpointer user_data)
 {
-  smie_test_context_t context;
+  test_common_context_t context;
 
   context.input = "# ( 4 + ( 5 x 6 ) + 7 ) + 8 #";
 
   context.offset = 1;
   smie_forward_sexp (fixture->grammar,
-		     smie_test_cursor_functions.forward_token,
+		     test_common_cursor_functions.forward_token,
 		     NULL,
 		     &context);
   g_assert_cmpint (23, ==, context.offset);
 
   context.offset = 2;
   smie_forward_sexp (fixture->grammar,
-		     smie_test_cursor_functions.forward_token,
+		     test_common_cursor_functions.forward_token,
 		     NULL,
 		     &context);
   g_assert_cmpint (23, ==, context.offset);
 
   context.offset = 3;
   smie_forward_sexp (fixture->grammar,
-		     smie_test_cursor_functions.forward_token,
+		     test_common_cursor_functions.forward_token,
 		     NULL,
 		     &context);
   g_assert_cmpint (7, ==, context.offset);
 
   context.offset = 7;
   smie_forward_sexp (fixture->grammar,
-		     smie_test_cursor_functions.forward_token,
+		     test_common_cursor_functions.forward_token,
 		     NULL,
 		     &context);
   g_assert_cmpint (17, ==, context.offset);
@@ -306,34 +306,34 @@ test_movement_forward (struct fixture *fixture, gconstpointer user_data)
 static void
 test_movement_backward (struct fixture *fixture, gconstpointer user_data)
 {
-  smie_test_context_t context;
+  test_common_context_t context;
 
   context.input = "# ( 4 + ( 5 x 6 ) + 7 ) + 8 #";
 
   context.offset = 23;
   smie_backward_sexp (fixture->grammar,
-		      smie_test_cursor_functions.backward_token,
+		      test_common_cursor_functions.backward_token,
 		      NULL,
 		      &context);
   g_assert_cmpint (1, ==, context.offset);
 
   context.offset = 22;
   smie_backward_sexp (fixture->grammar,
-		      smie_test_cursor_functions.backward_token,
+		      test_common_cursor_functions.backward_token,
 		      NULL,
 		      &context);
   g_assert_cmpint (1, ==, context.offset);
 
   context.offset = 17;
   smie_backward_sexp (fixture->grammar,
-		      smie_test_cursor_functions.backward_token,
+		      test_common_cursor_functions.backward_token,
 		      NULL,
 		      &context);
   g_assert_cmpint (7, ==, context.offset);
 
   context.offset = 7;
   smie_backward_sexp (fixture->grammar,
-		      smie_test_cursor_functions.backward_token,
+		      test_common_cursor_functions.backward_token,
 		      NULL,
 		      &context);
   g_assert_cmpint (5, ==, context.offset);

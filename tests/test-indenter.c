@@ -70,7 +70,7 @@ setup (struct fixture *fixture, gconstpointer user_data)
 
   fixture->indenter = smie_indenter_new (grammar,
 					 2,
-					 &smie_test_cursor_functions);
+					 &test_common_cursor_functions);
 
   fd = open (INPUT_FILE, O_RDONLY);
   g_assert (fd >= 0);
@@ -93,10 +93,10 @@ teardown (struct fixture *fixture, gconstpointer user_data)
 static void
 test_basic (struct fixture *fixture, gconstpointer user_data)
 {
-  struct smie_test_context_t context;
+  struct test_common_context_t context;
   gint column;
 
-  memset (&context, 0, sizeof (struct smie_test_context_t));
+  memset (&context, 0, sizeof (struct test_common_context_t));
   context.input = fixture->input_addr;
 
   context.offset = 0;

@@ -70,7 +70,7 @@ smie_rule_list_equal (struct smie_rule_list_t *a,
 }
 
 gboolean
-smie_test_bnf_grammar_equal (smie_bnf_grammar_t *a,
+test_common_bnf_grammar_equal (smie_bnf_grammar_t *a,
 			     smie_bnf_grammar_t *b)
 {
   struct { GHashTable *from, *to; } permutations[2];
@@ -100,7 +100,7 @@ smie_test_bnf_grammar_equal (smie_bnf_grammar_t *a,
 }
 
 gboolean
-smie_test_prec2_grammar_equal (smie_prec2_grammar_t *a,
+test_common_prec2_grammar_equal (smie_prec2_grammar_t *a,
 			       smie_prec2_grammar_t *b)
 {
   struct { smie_prec2_grammar_t *from, *to; } permutations[2];
@@ -142,7 +142,7 @@ smie_test_prec2_grammar_equal (smie_prec2_grammar_t *a,
 }
 
 gboolean
-smie_test_grammar_equal (smie_grammar_t *a,
+test_common_grammar_equal (smie_grammar_t *a,
 			 smie_grammar_t *b)
 {
   struct { smie_grammar_t *from, *to; } permutations[2];
@@ -174,9 +174,9 @@ smie_test_grammar_equal (smie_grammar_t *a,
 }
 
 static gboolean
-smie_test_forward_char (gpointer data)
+test_common_forward_char (gpointer data)
 {
-  struct smie_test_context_t *context = data;
+  struct test_common_context_t *context = data;
   if (context->input[context->offset] != '\0')
     {
       context->offset++;
@@ -186,9 +186,9 @@ smie_test_forward_char (gpointer data)
 }
 
 static gboolean
-smie_test_backward_char (gpointer data)
+test_common_backward_char (gpointer data)
 {
-  struct smie_test_context_t *context = data;
+  struct test_common_context_t *context = data;
   if (context->offset > 0)
     {
       context->offset--;
@@ -198,9 +198,9 @@ smie_test_backward_char (gpointer data)
 }
 
 static gboolean
-smie_test_forward_to_line_end (gpointer data)
+test_common_forward_to_line_end (gpointer data)
 {
-  struct smie_test_context_t *context = data;
+  struct test_common_context_t *context = data;
   goffset offset = context->offset;
   while (context->input[context->offset] != '\0'
 	 && context->input[context->offset] != '\n')
@@ -209,9 +209,9 @@ smie_test_forward_to_line_end (gpointer data)
 }
 
 static gboolean
-smie_test_backward_to_line_start (gpointer data)
+test_common_backward_to_line_start (gpointer data)
 {
-  struct smie_test_context_t *context = data;
+  struct test_common_context_t *context = data;
   goffset offset = context->offset;
   while (context->offset > 0
 	 && context->input[context->offset - 1] != '\n')
@@ -220,11 +220,11 @@ smie_test_backward_to_line_start (gpointer data)
 }
 
 static gboolean
-smie_test_forward_line (gpointer data)
+test_common_forward_line (gpointer data)
 {
-  struct smie_test_context_t *context = data;
+  struct test_common_context_t *context = data;
   goffset offset = context->offset;
-  smie_test_forward_to_line_end (data);
+  test_common_forward_to_line_end (data);
   if (context->input[context->offset] != '\0'
       && context->input[context->offset] == '\n')
     context->offset++;
@@ -232,20 +232,20 @@ smie_test_forward_line (gpointer data)
 }
 
 static gboolean
-smie_test_backward_line (gpointer data)
+test_common_backward_line (gpointer data)
 {
-  struct smie_test_context_t *context = data;
+  struct test_common_context_t *context = data;
   goffset offset = context->offset;
-  smie_test_backward_to_line_start (data);
+  test_common_backward_to_line_start (data);
   if (context->offset > 0 && context->input[context->offset - 1] == '\n')
     context->offset--;
   return offset != context->offset;
 }
 
 static gboolean
-smie_test_forward_comment (gpointer data)
+test_common_forward_comment (gpointer data)
 {
-  struct smie_test_context_t *context = data;
+  struct test_common_context_t *context = data;
   goffset offset = context->offset;
   while (context->input[context->offset] != '\0'
 	 && context->input[context->offset] != '\n'
@@ -255,9 +255,9 @@ smie_test_forward_comment (gpointer data)
 }
 
 static gboolean
-smie_test_backward_comment (gpointer data)
+test_common_backward_comment (gpointer data)
 {
-  struct smie_test_context_t *context = data;
+  struct test_common_context_t *context = data;
   goffset offset = context->offset;
   while (context->offset > 0
 	 && context->input[context->offset] != '\n'
@@ -267,9 +267,9 @@ smie_test_backward_comment (gpointer data)
 }
 
 static gchar *
-smie_test_forward_token (gpointer data)
+test_common_forward_token (gpointer data)
 {
-  struct smie_test_context_t *context = data;
+  struct test_common_context_t *context = data;
   goffset offset;
   while (context->input[context->offset] != '\0'
 	 && g_ascii_isspace (context->input[context->offset]))
@@ -284,9 +284,9 @@ smie_test_forward_token (gpointer data)
 }
 
 static gchar *
-smie_test_backward_token (gpointer data)
+test_common_backward_token (gpointer data)
 {
-  struct smie_test_context_t *context = data;
+  struct test_common_context_t *context = data;
   goffset offset;
   while (context->offset > 0
 	 && g_ascii_isspace (context->input[context->offset]))
@@ -302,46 +302,46 @@ smie_test_backward_token (gpointer data)
 }
 
 static gboolean
-smie_test_starts_line (gpointer data)
+test_common_starts_line (gpointer data)
 {
-  struct smie_test_context_t *context = data;
+  struct test_common_context_t *context = data;
   return context->offset == 0
     || context->input[context->offset - 1] == '\n';
 }
 
 static gboolean
-smie_test_ends_line (gpointer data)
+test_common_ends_line (gpointer data)
 {
-  struct smie_test_context_t *context = data;
+  struct test_common_context_t *context = data;
   return context->input[context->offset] == '\0'
     || context->input[context->offset] == '\n';
 }
 
 static gboolean
-smie_test_is_start (gpointer data)
+test_common_is_start (gpointer data)
 {
-  struct smie_test_context_t *context = data;
+  struct test_common_context_t *context = data;
   return context->offset == 0;
 }
 
 static gboolean
-smie_test_is_end (gpointer data)
+test_common_is_end (gpointer data)
 {
-  struct smie_test_context_t *context = data;
+  struct test_common_context_t *context = data;
   return context->input[context->offset] == '\0';
 }
 
 static gint
-smie_test_get_offset (gpointer data)
+test_common_get_offset (gpointer data)
 {
-  struct smie_test_context_t *context = data;
+  struct test_common_context_t *context = data;
   return context->offset;
 }
 
 static gint
-smie_test_get_line_offset (gpointer data)
+test_common_get_line_offset (gpointer data)
 {
-  struct smie_test_context_t *context = data;
+  struct test_common_context_t *context = data;
   goffset offset = context->offset;
   while (offset - 1 >= 0 && context->input[offset - 1] != '\n')
     offset--;
@@ -349,9 +349,9 @@ smie_test_get_line_offset (gpointer data)
 }
 
 static gunichar
-smie_test_get_char (gpointer user_data)
+test_common_get_char (gpointer user_data)
 {
-  struct smie_test_context_t *context = user_data;
+  struct test_common_context_t *context = user_data;
   if (context->offset < 0
       || context->input[context->offset] == '\0')
     return (gunichar) -1;
@@ -359,41 +359,41 @@ smie_test_get_char (gpointer user_data)
 }
 
 static void
-smie_test_push_context (gpointer data)
+test_common_push_context (gpointer data)
 {
-  struct smie_test_context_t *context = data;
+  struct test_common_context_t *context = data;
   context->stack = g_list_prepend (context->stack,
 				   GINT_TO_POINTER (context->offset));
 }
 
 static void
-smie_test_pop_context (gpointer data)
+test_common_pop_context (gpointer data)
 {
-  struct smie_test_context_t *context = data;
+  struct test_common_context_t *context = data;
   g_return_if_fail (context->stack);
   context->offset = GPOINTER_TO_INT (context->stack->data);
   context->stack = g_list_delete_link (context->stack, context->stack);
 }
 
-smie_cursor_functions_t smie_test_cursor_functions =
+smie_cursor_functions_t test_common_cursor_functions =
   {
-    smie_test_forward_char,
-    smie_test_backward_char,
-    smie_test_forward_line,
-    smie_test_backward_line,
-    smie_test_forward_to_line_end,
-    smie_test_backward_to_line_start,
-    smie_test_forward_comment,
-    smie_test_backward_comment,
-    smie_test_forward_token,
-    smie_test_backward_token,
-    smie_test_is_start,
-    smie_test_is_end,
-    smie_test_starts_line,
-    smie_test_ends_line,
-    smie_test_get_offset,
-    smie_test_get_line_offset,
-    smie_test_get_char,
-    smie_test_push_context,
-    smie_test_pop_context
+    test_common_forward_char,
+    test_common_backward_char,
+    test_common_forward_line,
+    test_common_backward_line,
+    test_common_forward_to_line_end,
+    test_common_backward_to_line_start,
+    test_common_forward_comment,
+    test_common_backward_comment,
+    test_common_forward_token,
+    test_common_backward_token,
+    test_common_is_start,
+    test_common_is_end,
+    test_common_starts_line,
+    test_common_ends_line,
+    test_common_get_offset,
+    test_common_get_line_offset,
+    test_common_get_char,
+    test_common_push_context,
+    test_common_pop_context
   };
