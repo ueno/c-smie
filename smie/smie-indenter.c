@@ -316,6 +316,7 @@ static smie_indent_function_t functions[] =
     smie_indent_bob,
     smie_indent_keyword,
     smie_indent_after_keyword
+    /* FIXME: implement smie_indent_exps */
   };
 
 /**
