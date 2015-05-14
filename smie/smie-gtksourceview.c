@@ -38,21 +38,21 @@
 static gboolean
 smie_gtk_source_buffer_forward_char (gpointer data)
 {
-  struct smie_gtk_source_buffer_context_t *context = data;
+  smie_gtk_source_buffer_context_t *context = data;
   return gtk_text_iter_forward_char (&context->iter);
 }
 
 static gboolean
 smie_gtk_source_buffer_backward_char (gpointer data)
 {
-  struct smie_gtk_source_buffer_context_t *context = data;
+  smie_gtk_source_buffer_context_t *context = data;
   return gtk_text_iter_backward_char (&context->iter);
 }
 
 static gboolean
 smie_gtk_source_buffer_forward_to_line_end (gpointer data)
 {
-  struct smie_gtk_source_buffer_context_t *context = data;
+  smie_gtk_source_buffer_context_t *context = data;
   /* If we are already on the EOL, do nothing.  */
   if (gtk_text_iter_ends_line (&context->iter))
     return FALSE;
@@ -62,7 +62,7 @@ smie_gtk_source_buffer_forward_to_line_end (gpointer data)
 static gboolean
 smie_gtk_source_buffer_backward_to_line_start (gpointer data)
 {
-  struct smie_gtk_source_buffer_context_t *context = data;
+  smie_gtk_source_buffer_context_t *context = data;
   GtkTextIter start_iter;
   gtk_text_iter_assign (&start_iter, &context->iter);
   while (!gtk_text_iter_starts_line (&context->iter))
@@ -73,21 +73,21 @@ smie_gtk_source_buffer_backward_to_line_start (gpointer data)
 static gboolean
 smie_gtk_source_buffer_forward_line (gpointer data)
 {
-  struct smie_gtk_source_buffer_context_t *context = data;
+  smie_gtk_source_buffer_context_t *context = data;
   return gtk_text_iter_forward_line (&context->iter);
 }
 
 static gboolean
 smie_gtk_source_buffer_backward_line (gpointer data)
 {
-  struct smie_gtk_source_buffer_context_t *context = data;
+  smie_gtk_source_buffer_context_t *context = data;
   return gtk_text_iter_backward_line (&context->iter);
 }
 
 static gboolean
 smie_gtk_source_buffer_forward_comment (gpointer data)
 {
-  struct smie_gtk_source_buffer_context_t *context = data;
+  smie_gtk_source_buffer_context_t *context = data;
   GtkTextIter start_iter;
 
   gtk_text_iter_assign (&start_iter, &context->iter);
@@ -104,7 +104,7 @@ smie_gtk_source_buffer_forward_comment (gpointer data)
 static gboolean
 smie_gtk_source_buffer_backward_comment (gpointer data)
 {
-  struct smie_gtk_source_buffer_context_t *context = data;
+  smie_gtk_source_buffer_context_t *context = data;
   GtkTextIter end_iter;
 
   gtk_text_iter_assign (&end_iter, &context->iter);
@@ -121,7 +121,7 @@ smie_gtk_source_buffer_backward_comment (gpointer data)
 static gchar *
 smie_gtk_source_buffer_forward_token (gpointer data)
 {
-  struct smie_gtk_source_buffer_context_t *context = data;
+  smie_gtk_source_buffer_context_t *context = data;
   GtkTextIter iter;
 
   /* Skip comments and whitespaces.  */
@@ -175,7 +175,7 @@ smie_gtk_source_buffer_forward_token (gpointer data)
 static gchar *
 smie_gtk_source_buffer_backward_token (gpointer data)
 {
-  struct smie_gtk_source_buffer_context_t *context = data;
+  smie_gtk_source_buffer_context_t *context = data;
   GtkTextIter iter, start_iter;
 
   if (gtk_text_iter_is_start (&context->iter))
@@ -234,56 +234,56 @@ smie_gtk_source_buffer_backward_token (gpointer data)
 static gboolean
 smie_gtk_source_buffer_is_start (gpointer data)
 {
-  struct smie_gtk_source_buffer_context_t *context = data;
+  smie_gtk_source_buffer_context_t *context = data;
   return gtk_text_iter_is_start (&context->iter);
 }
 
 static gboolean
 smie_gtk_source_buffer_is_end (gpointer data)
 {
-  struct smie_gtk_source_buffer_context_t *context = data;
+  smie_gtk_source_buffer_context_t *context = data;
   return gtk_text_iter_is_end (&context->iter);
 }
 
 static gboolean
 smie_gtk_source_buffer_starts_line (gpointer data)
 {
-  struct smie_gtk_source_buffer_context_t *context = data;
+  smie_gtk_source_buffer_context_t *context = data;
   return gtk_text_iter_starts_line (&context->iter);
 }
 
 static gboolean
 smie_gtk_source_buffer_ends_line (gpointer data)
 {
-  struct smie_gtk_source_buffer_context_t *context = data;
+  smie_gtk_source_buffer_context_t *context = data;
   return gtk_text_iter_ends_line (&context->iter);
 }
 
 static gint
 smie_gtk_source_buffer_get_offset (gpointer data)
 {
-  struct smie_gtk_source_buffer_context_t *context = data;
+  smie_gtk_source_buffer_context_t *context = data;
   return gtk_text_iter_get_offset (&context->iter);
 }
 
 static gint
 smie_gtk_source_buffer_get_line_offset (gpointer data)
 {
-  struct smie_gtk_source_buffer_context_t *context = data;
+  smie_gtk_source_buffer_context_t *context = data;
   return gtk_text_iter_get_line_offset (&context->iter);
 }
 
 static gunichar
 smie_gtk_source_buffer_get_char (gpointer user_data)
 {
-  struct smie_gtk_source_buffer_context_t *context = user_data;
+  smie_gtk_source_buffer_context_t *context = user_data;
   return gtk_text_iter_get_char (&context->iter);
 }
 
 static void
 smie_gtk_source_buffer_push_context (gpointer data)
 {
-  struct smie_gtk_source_buffer_context_t *context = data;
+  smie_gtk_source_buffer_context_t *context = data;
   context->stack = g_list_prepend (context->stack,
 				   gtk_text_iter_copy (&context->iter));
 }
@@ -291,7 +291,7 @@ smie_gtk_source_buffer_push_context (gpointer data)
 static void
 smie_gtk_source_buffer_pop_context (gpointer data)
 {
-  struct smie_gtk_source_buffer_context_t *context = data;
+  smie_gtk_source_buffer_context_t *context = data;
   g_return_if_fail (context->stack);
   gtk_text_iter_assign (&context->iter, context->stack->data);
   gtk_text_iter_free (context->stack->data);

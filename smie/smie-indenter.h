@@ -22,6 +22,11 @@
 
 G_BEGIN_DECLS
 
+/**
+ * smie_indenter_t:
+ *
+ * An indenter.
+ */
 typedef struct _smie_indenter_t smie_indenter_t;
 typedef struct _smie_cursor_functions_t smie_cursor_functions_t;
 

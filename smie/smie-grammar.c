@@ -371,10 +371,10 @@ smie_prec2_grammar_add_rule (smie_prec2_grammar_t *prec2,
 /**
  * smie_prec2_grammar_add_pair:
  * @prec2: a #smie_prec2_grammar_t object
- * @opener_symbol: an opener #smie_symbol_t
- * @closer_symbol: a closer #smie_symbol_t
+ * @opener_symbol: an opener #smie_symbol_t object
+ * @closer_symbol: a closer #smie_symbol_t object
  *
- * Add an open/close pair into @prec2.
+ * Add an open/close pair into a PREC2 grammar.
  * Returns: %TRUE if the pair is not defined already, %FALSE otherwise.
  */
 gboolean
@@ -480,6 +480,15 @@ smie_precs_grammar_free (smie_precs_grammar_t *precs)
   g_free (precs);
 }
 
+/**
+ * smie_precs_grammar_add_prec:
+ * @precs: a #smie_precs_grammar_t object
+ * @type: a #smie_prec_type_t value
+ * @symbols: (transfer full) (element-type smie_symbol_t): a list of
+ * operator symbols
+ *
+ * Assign precedence type @type to each symbol in @symbols.
+ */
 void
 smie_precs_grammar_add_prec (smie_precs_grammar_t *precs,
 			     smie_prec_type_t type,
@@ -728,6 +737,7 @@ smie_debug_dump_op_set (GHashTable *op, const char *name)
  * @bnf: a #smie_bnf_grammar_t object
  * @resolvers: (transfer full) (element-type smie_precs_grammar_t): a
  *   list of PRECS grammars
+ * @error: return location of an error
  *
  * Populate a PREC2 grammar from a BNF grammar and PRECS grammars.
  * Returns: a new #smie_prec2_grammar_t object
@@ -1358,6 +1368,15 @@ smie_grammar_set_symbol_class (smie_grammar_t *grammar,
   level->symbol_class = symbol_class;
 }
 
+/**
+ * smie_grammar_has_pair:
+ * @grammar: a #smie_grammar_t object
+ * @opener_symbol: an opener #smie_symbol_t object
+ * @closer_symbol: a closer #smie_symbol_t object
+ *
+ * Add an open/close pair into a PRECS grammar.
+ * Returns: %TRUE if the pair is not defined already, %FALSE otherwise.
+ */
 gboolean
 smie_grammar_has_pair (smie_grammar_t *grammar,
 		       const smie_symbol_t *opener_symbol,
@@ -1374,6 +1393,14 @@ smie_grammar_has_pair (smie_grammar_t *grammar,
     }
 }
 
+/**
+ * smie_grammar_is_pair_end:
+ * @grammar: a #smie_grammar_t object
+ * @closer_symbol: a closer #smie_symbol_t object
+ *
+ * Check if @closer_symbol can be an end of a pair.
+ * Returns: %TRUE if it is, %FALSE otherwise.
+ */
 gboolean
 smie_grammar_is_pair_end (smie_grammar_t *grammar,
 			  const smie_symbol_t *closer_symbol)
@@ -1534,6 +1561,18 @@ smie_next_sexp (smie_grammar_t *grammar,
   return FALSE;
 }
 
+/**
+ * smie_forward_sexp:
+ * @grammar: a #smie_grammar_t object
+ * @next_token_func: a #smie_next_token_function_t function
+ * @symbol: (nullable): a #smie_symbol_t object
+ * @context: the context pointer
+ *
+ * Skip over an S-expression forward.  If @symbol is not %NULL, it
+ * means to parse as if we had just successfully passed this symbol.
+ *
+ * Returns: %TRUE if the cursor moves, %FALSE otherwise.
+ */
 gboolean
 smie_forward_sexp (smie_grammar_t *grammar,
 		   smie_next_token_function_t next_token_func,
@@ -1548,6 +1587,18 @@ smie_forward_sexp (smie_grammar_t *grammar,
 			 smie_select_left);
 }
 
+/**
+ * smie_backward_sexp:
+ * @grammar: a #smie_grammar_t object
+ * @next_token_func: a #smie_next_token_function_t function
+ * @symbol: (nullable): a #smie_symbol_t object
+ * @context: a context pointer
+ *
+ * Skip over an S-expression backward.  If @symbol is not %NULL, it
+ * means to parse as if we had just successfully passed this symbol.
+ *
+ * Returns: %TRUE if the cursor moves, %FALSE otherwise
+ */
 gboolean
 smie_backward_sexp (smie_grammar_t *grammar,
 		    smie_next_token_function_t next_token_func,
@@ -1562,6 +1613,12 @@ smie_backward_sexp (smie_grammar_t *grammar,
 			 smie_select_right);
 }
 
+/**
+ * smie_error_quark:
+ *
+ * Our personal error quark.
+ * Returns: a #GQuark value
+ */
 GQuark
 smie_error_quark (void)
 {

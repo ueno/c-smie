@@ -6,11 +6,11 @@
 ]>
 <book id="index">
   <bookinfo>
-    <title>libsmie Reference Manual</title>
+    <title>smie Reference Manual</title>
     <releaseinfo>
-      for libsmie [VERSION].
+      for smie [VERSION].
       The latest version of this documentation can be found on-line at
-      <ulink role="online-location" url="http://[SERVER]/libsmie/index.html">http://[SERVER]/libsmie/</ulink>.
+      <ulink role="online-location" url="http://[SERVER]/smie/index.html">http://[SERVER]/smie/</ulink>.
     </releaseinfo>
   </bookinfo>
 
@@ -19,10 +19,12 @@
     <xi:include href="xml/smie-indenter.xml"/>
     <xi:include href="xml/smie-grammar.xml"/>
   </chapter>
+
   <chapter>
     <title>Supplemental API</title>
     <xi:include href="xml/smie-gtksourceview.xml"/>
   </chapter>
+
   <chapter id="object-tree">
     <title>Object Hierarchy</title>
      <xi:include href="xml/tree_index.sgml"/>

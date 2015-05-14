@@ -22,11 +22,46 @@
 
 G_BEGIN_DECLS
 
+/**
+ * smie_symbol_pool_t:
+ *
+ * A pool of allocated symbols.
+ */
 typedef struct _smie_symbol_pool_t smie_symbol_pool_t;
+
+/**
+ * smie_symbol_t:
+ *
+ * A symbol.
+ */
 typedef struct _smie_symbol_t smie_symbol_t;
+
+/**
+ * smie_bnf_grammar_t:
+ *
+ * A BNF grammar.
+ */
 typedef struct _smie_bnf_grammar_t smie_bnf_grammar_t;
+
+/**
+ * smie_prec2_grammar_t:
+ *
+ * A PREC2 grammar.
+ */
 typedef struct _smie_prec2_grammar_t smie_prec2_grammar_t;
+
+/**
+ * smie_precs_grammar_t:
+ *
+ * A PRECS grammar.
+ */
 typedef struct _smie_precs_grammar_t smie_precs_grammar_t;
+
+/**
+ * smie_grammar_t:
+ *
+ * The final grammar.
+ */
 typedef struct _smie_grammar_t smie_grammar_t;
 
 /**
@@ -34,6 +69,8 @@ typedef struct _smie_grammar_t smie_grammar_t;
  * @SMIE_SYMBOL_TERMINAL: a terminal symbol
  * @SMIE_SYMBOL_TERMINAL_VARIABLE: a terminal symbol, without immediate value
  * @SMIE_SYMBOL_NON_TERMINAL: a non-terminal symbol
+ *
+ * Symbol types.
  */
 typedef enum
   {
@@ -47,6 +84,8 @@ typedef enum
  * @SMIE_SYMBOL_CLASS_NEITHER: neither an opener nor a closer
  * @SMIE_SYMBOL_CLASS_OPENER: an opener
  * @SMIE_SYMBOL_CLASS_CLOSER: a closer
+ *
+ * Symbol classes.
  */
 typedef enum
   {
@@ -60,6 +99,8 @@ typedef enum
  * @SMIE_PREC2_EQ: both symbols have the same precedence
  * @SMIE_PREC2_LT: the right symbol has a higher precedence
  * @SMIE_PREC2_GT: the left symbol has a higher precedence
+ *
+ * Precedence types.
  */
 typedef enum
   {
@@ -74,6 +115,8 @@ typedef enum
  * @SMIE_PREC_RIGHT: right associative
  * @SMIE_PREC_ASSOC: associative
  * @SMIE_PREC_NON_ASSOC: not associative
+ *
+ * Associativity types.
  */
 typedef enum
   {
@@ -91,6 +134,11 @@ const smie_symbol_t *smie_symbol_intern (smie_symbol_pool_t *pool,
 					 const gchar *name,
 					 smie_symbol_type_t type);
 
+/**
+ * SMIE_ERROR:
+ *
+ * Our personal error domain.
+ */
 #define SMIE_ERROR smie_error_quark ()
 GQuark smie_error_quark (void);
 
@@ -129,8 +177,6 @@ smie_prec2_grammar_t *smie_prec2_grammar_load (const gchar *input,
 
 smie_grammar_t *smie_grammar_alloc (smie_symbol_pool_t *pool);
 void smie_grammar_free (smie_grammar_t *grammar);
-smie_grammar_t *smie_grammar_ref (smie_grammar_t *grammar);
-void smie_grammar_unref (smie_grammar_t *grammar);
 gboolean smie_grammar_add_level (smie_grammar_t *grammar,
 				 const smie_symbol_t *symbol,
 				 gint left_prec,
@@ -145,7 +191,7 @@ gboolean smie_grammar_has_pair (smie_grammar_t *grammar,
 				const smie_symbol_t *opener_symbol,
 				const smie_symbol_t *closer_symbol);
 gboolean smie_grammar_is_pair_end (smie_grammar_t *grammar,
-				   const smie_symbol_t *symbol);
+				   const smie_symbol_t *closer_symbol);
 gboolean smie_grammar_is_keyword (smie_grammar_t *grammar,
 				  const smie_symbol_t *symbol);
 gint smie_grammar_get_left_prec (smie_grammar_t *grammar,
@@ -159,7 +205,19 @@ smie_prec2_grammar_t *smie_bnf_to_prec2 (smie_bnf_grammar_t *bnf,
 smie_grammar_t *smie_prec2_to_grammar (smie_prec2_grammar_t *prec2,
 				       GError **error);
 
-typedef gchar * (*smie_next_token_function_t) (gpointer);
+/**
+ * smie_next_token_function_t:
+ * @context: a context pointer
+ *
+ * Specify the type of function passed to smie_forward_sexp() and
+ * smie_backward_sexp().  The function moves the cursor to the next
+ * token, if any, and returns the token between the previous cursor
+ * position and the new cursor position.  If the cursor is already on
+ * the middle of a token, return the partial string of the token.
+ *
+ * Returns: (transfer full): a token
+ */
+typedef gchar * (*smie_next_token_function_t) (gpointer context);
 
 gboolean smie_forward_sexp (smie_grammar_t *grammar,
 			    smie_next_token_function_t next_token_func,

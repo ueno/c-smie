@@ -23,9 +23,17 @@
 
 G_BEGIN_DECLS
 
-typedef struct smie_gtk_source_buffer_context_t smie_gtk_source_buffer_context_t;
+typedef struct _smie_gtk_source_buffer_context_t smie_gtk_source_buffer_context_t;
 
-struct smie_gtk_source_buffer_context_t
+/**
+ * smie_gtk_source_buffer_context_t:
+ * @buffer: a source buffer
+ * @iter: a text iter
+ * @stack: a stack used internally
+ *
+ * A context object for GtkSourceView.
+ */
+struct _smie_gtk_source_buffer_context_t
 {
   GtkSourceBuffer *buffer;
   GtkTextIter iter;
