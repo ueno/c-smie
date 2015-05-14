@@ -20,8 +20,7 @@
 #include <config.h>
 #endif
 
-#include "smie-indenter.h"
-#include "smie-test.h"
+#include "tests/test-common.h"
 
 #include <fcntl.h>
 #include <string.h>

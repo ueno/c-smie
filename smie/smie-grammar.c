@@ -32,7 +32,7 @@
  * @title: Grammar
  * @section_id:
  * @stability: Unstable
- * @include: smie.h
+ * @include: smie/smie.h
  *
  * Low level functions to manipulate operator precedence grammar and
  * intermediate grammars.

@@ -20,7 +20,7 @@
 #include <config.h>
 #endif
 
-#include "smie-test.h"
+#include "tests/test-common.h"
 
 #include <string.h>
 

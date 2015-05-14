@@ -22,7 +22,7 @@
 
 #include <glib/gprintf.h>
 #include <gtksourceview/gtksource.h>
-#include <smie-gtksourceview.h>
+#include <smie/smie-gtksourceview.h>
 #include <stdlib.h>
 #include <string.h>
 

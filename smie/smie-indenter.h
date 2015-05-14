@@ -18,7 +18,7 @@
 #ifndef __SMIE_INDENTER_H__
 #define __SMIE_INDENTER_H__ 1
 
-#include <smie-grammar.h>
+#include <smie/smie-grammar.h>
 
 G_BEGIN_DECLS
 

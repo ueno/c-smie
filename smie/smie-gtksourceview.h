@@ -18,7 +18,7 @@
 #ifndef __SMIE_GTKSOURCEVIEW_H__
 #define __SMIE_GTKSOURCEVIEW_H__ 1
 
-#include <smie.h>
+#include <smie/smie.h>
 #include <gtksourceview/gtksource.h>
 
 G_BEGIN_DECLS

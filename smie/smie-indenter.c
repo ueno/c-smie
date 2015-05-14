@@ -28,7 +28,7 @@
  * @title: Indenter
  * @section_id:
  * @stability: Unstable
- * @include: smie.h
+ * @include: smie/smie.h
  *
  * The indenter object provides generic indentatin computation.
  */

@@ -1,7 +1,7 @@
 AC_INIT([c-smie], [0])
 AC_PREREQ([2.62])
 
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([subdir-objects])
 
 AC_PROG_CC
 AC_PROG_YACC

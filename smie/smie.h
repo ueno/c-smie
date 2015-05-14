@@ -15,31 +15,10 @@
  * along with this program.  If not, see
  * <http://www.gnu.org/licenses/>.
  */
-#ifndef __SMIE_TEST_H__
-#define __SMIE_TEST_H__ 1
+#ifndef __SMIE_H__
+#define __SMIE_H__
 
-#include "smie-indenter.h"
-#include "smie-private.h"
+#include <smie/smie-grammar.h>
+#include <smie/smie-indenter.h>
 
-G_BEGIN_DECLS
-
-gboolean smie_test_bnf_grammar_equal (smie_bnf_grammar_t *a,
-				      smie_bnf_grammar_t *b);
-gboolean smie_test_prec2_grammar_equal (smie_prec2_grammar_t *a,
-					smie_prec2_grammar_t *b);
-gboolean smie_test_grammar_equal (smie_grammar_t *a,
-				  smie_grammar_t *b);
-
-typedef struct smie_test_context_t smie_test_context_t;
-struct smie_test_context_t
-{
-  const gchar *input;
-  goffset offset;
-  GList *stack;
-};
-
-smie_cursor_functions_t smie_test_cursor_functions;
-
-G_END_DECLS
-
-#endif	/* __SMIE_TEST_H__ */
+#endif	/* __SMIE_H__ */

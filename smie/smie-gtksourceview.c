@@ -20,8 +20,7 @@
 #include <config.h>
 #endif
 
-#include "smie-gtksourceview.h"
-
+#include <smie/smie-gtksourceview.h>
 #include <gtksourceview/gtksource.h>
 
 /**

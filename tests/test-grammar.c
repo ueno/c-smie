@@ -20,8 +20,7 @@
 #include <config.h>
 #endif
 
-#include "smie-grammar.h"
-#include "smie-test.h"
+#include "tests/test-common.h"
 #include <glib/gprintf.h>
 #include <string.h>
 
