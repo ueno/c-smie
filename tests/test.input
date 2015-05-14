@@ -1,4 +1,4 @@
-if -z "$foo"; then
+if test -z "$foo"; then
   while true; do
    echo 1
  done
