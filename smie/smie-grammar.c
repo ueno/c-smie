@@ -834,7 +834,6 @@ smie_bnf_to_prec2 (smie_bnf_grammar_t *bnf,
 	  smie_precs_grammar_t *precs = l->data;
 	  smie_prec2_merge_precs (override, precs);
 	}
-      smie_debug_dump_prec2_grammar (override);
       g_list_free_full (resolvers, (GDestroyNotify) smie_precs_grammar_free);
     }
 
