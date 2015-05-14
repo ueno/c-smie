@@ -37,5 +37,5 @@ AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([Makefile
 docs/Makefile
 docs/references/Makefile
-docs/references/libsmie/Makefile])
+docs/references/smie/Makefile])
 AC_OUTPUT

@@ -1,1 +1,1 @@
-SUBDIRS = libsmie
+SUBDIRS = smie
