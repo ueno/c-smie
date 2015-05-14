@@ -268,11 +268,7 @@ editor_application_window_key_press_event (GtkWidget *widget,
       /* Replace the current indent if it doesn't match the computed one.  */
       if (indent < current_indent)
 	{
-	  while (indent < current_indent)
-	    {
-	      gtk_text_iter_backward_char (&end_iter);
-	      current_indent--;
-	    }
+	  gtk_text_iter_forward_chars (&start_iter, indent);
 	  gtk_text_buffer_delete (GTK_TEXT_BUFFER (window->buffer),
 				  &start_iter, &end_iter);
 	}
