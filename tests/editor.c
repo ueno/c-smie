@@ -271,7 +271,7 @@ editor_application_window_key_press_event (GtkWidget *widget,
 	  while (indent < current_indent)
 	    {
 	      gtk_text_iter_backward_char (&end_iter);
-	      indent--;
+	      current_indent--;
 	    }
 	  gtk_text_buffer_delete (GTK_TEXT_BUFFER (window->buffer),
 				  &start_iter, &end_iter);
