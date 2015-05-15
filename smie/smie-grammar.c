@@ -44,26 +44,37 @@
  * - a PREC2 grammar: #smie_prec2_grammar_t
  * - the final grammar: #smie_grammar_t
  *
- * A PREC2 grammar can be computed from a BNF grammar and optional
- * PRECS grammars, which are used as conflict resolvers.  Then the
- * PREC2 grammar can be converted into the final grammar.
+ * A BNF grammar is a list of rules consisting of RHS symbol and LHS
+ * symbols.  It can be constructed with smie_bnf_grammar_alloc() and
+ * smie_bnf_grammar_add_rule().
  *
- * A PREC2 grammar can be loaded from a file, in the following form
- * (in the RFC2234 format):
+ * A PRECS grammar is a list of operator associativity rules.  It can
+ * be constructed with smie_precs_grammar_alloc() and
+ * smie_precs_grammar_add_prec().
+ *
+ * A PREC2 grammar can be computed from a BNF grammar and optional
+ * PRECS grammars, which are used to resolve conflicts.  Then the
+ * PREC2 grammar can be converted into the final grammar.  It can be
+ * constructed with smie_prec2_grammar_alloc() and
+ * smie_prec2_grammar_add_rule().
+ *
+ * A PREC2 grammar can also be loaded from a file through
+ * smie_prec2_grammar_load().  The file is in the following form (in
+ * the RFC2234 format):
  *
  * |[
- * grammar = *rules *resolvers
+ * grammar = rules *WSP resolvers
  *
- * rules = *rule
- * rule = nonterminal ":" sentences ";"
- * sentences = symbols *("|" symbols)
+ * rules = rule *(WSP rule)
+ * rule = nonterminal *WSP ":" *WSP sentences *WSP ";"
+ * sentences = symbols *(*WSP "|" *WSP symbols)
  *
- * resolvers = *resolver
- * resolver = "%precs" "{" precs "}"
- * precs = ("left" / "right" / "assoc" / "nonassoc")
- *   TERMINAL *(WSP TERMINAL) ";"
+ * resolvers = *WSP / resolver *(WSP resolver)
+ * resolver = "%precs" *WSP "{" *WSP precs *WSP "}"
+ * precs = ("left" / "right" / "assoc" / "nonassoc") *WSP
+ *   TERMINAL *(WSP TERMINAL) *WSP ";"
  *
- * symbols = *symbol
+ * symbols = symbol *(WSP symbol)
  * symbol = NONTERMINAL / TERMINAL / TERMINALVAR
  *
  * NONTERMINAL = %x61-7a ; lowercase letters
