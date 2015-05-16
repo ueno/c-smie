@@ -117,6 +117,9 @@ typedef struct _smie_rule_functions_t smie_rule_functions_t;
  * @basic: Return the basic indentation step
  * @list_intro: Return %TRUE if TOKEN is followed by a list
  *   expressions, %FALSE otherwise
+ * @close_all: Return %TRUE if TOKEN should be aligned with the opener
+ *   of the last close-paren token on the same line, if there are
+ *   multiple, %FALSE otherwise
  *
  * Set of configuration functions used by the indenter.  All those
  * functions except @basic are optional and can be set to %NULL.
