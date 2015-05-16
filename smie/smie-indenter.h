@@ -104,9 +104,36 @@ struct _smie_cursor_functions_t
   void (* pop_context) (gpointer);
 };
 
+typedef struct _smie_rule_functions_t smie_rule_functions_t;
+
+/**
+ * smie_rule_functions_t:
+ * @before: Return the offset to use to indent TOKEN itself, -1 if
+ *   undetermined
+ * @after: Return the offset to use for indentation after TOKEN, -1 if
+ *   undetermined
+ * @arg_elem: Return the offset to use to indent function arguments,
+ *   -1 if undetermined
+ * @basic: Return the basic indentation step
+ * @list_intro: Return %TRUE if TOKEN is followed by a list
+ *   expressions, %FALSE otherwise
+ *
+ * Set of configuration functions used by the indenter.  All those
+ * functions except @basic are optional and can be set to %NULL.
+ */
+struct _smie_rule_functions_t
+{
+  gint (* before) (const gchar *token);
+  gint (* after) (const gchar *token);
+  gint (* arg_elem) (void);
+  gint (* basic) (void);
+  gboolean (* list_intro) (const gchar *token);
+  gboolean (* close_all) (const gchar *token);
+};
+
 smie_indenter_t *smie_indenter_new (smie_grammar_t *grammar,
-				    gint step,
-				    smie_cursor_functions_t *functions);
+				    const smie_cursor_functions_t *functions,
+				    const smie_rule_functions_t *rules);
 smie_indenter_t *smie_indenter_ref (smie_indenter_t *indenter);
 void smie_indenter_unref (smie_indenter_t *indenter);
 gint smie_indenter_calculate (smie_indenter_t *indenter,

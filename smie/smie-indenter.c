@@ -38,35 +38,35 @@ struct _smie_indenter_t
   volatile gint ref_count;
 
   smie_grammar_t *grammar;
-  smie_cursor_functions_t *functions;
-  gint step;
+  const smie_cursor_functions_t *functions;
+  const smie_rule_functions_t *rules;
 };
 
 /**
  * smie_indenter_new:
  * @grammar: a #smie_grammar_t object
- * @step: a unit of a single indentation
  * @functions: a #smie_cursor_functions_t
+ * @rules: a #smie_rule_functions_t
  *
  * Create a new indenter.
  * Returns: a new #smie_indenter_t object
  */
 smie_indenter_t *
 smie_indenter_new (smie_grammar_t *grammar,
-		   gint step,
-		   smie_cursor_functions_t *functions)
+		   const smie_cursor_functions_t *functions,
+		   const smie_rule_functions_t *rules)
 {
   smie_indenter_t *result;
 
   g_return_val_if_fail (grammar, NULL);
-  g_return_val_if_fail (step >= 0, NULL);
   g_return_val_if_fail (functions, NULL);
+  g_return_val_if_fail (rules, NULL);
 
   result = g_new0 (smie_indenter_t, 1);
   result->ref_count = 1;
   result->grammar = grammar;
-  result->step = step;
   result->functions = functions;
+  result->rules = rules;
   return result;
 }
 
@@ -302,7 +302,8 @@ smie_indent_after_keyword (smie_indenter_t *indenter, gpointer context)
   if (symbol_class == SMIE_SYMBOL_CLASS_OPENER
       || smie_grammar_is_pair_end (indenter->grammar, symbol))
     {
-      indent = smie_indent_virtual (indenter, context) + indenter->step;
+      indent = smie_indent_virtual (indenter, context)
+	+ indenter->rules->basic ();
       indenter->functions->pop_context (context);
       return indent;
     }

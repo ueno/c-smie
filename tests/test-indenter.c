@@ -38,6 +38,22 @@ struct fixture
   size_t input_size;
 };
 
+static gint
+test_rule_basic (void)
+{
+  return 2;
+}
+
+static const smie_rule_functions_t test_rules =
+  {
+    NULL,
+    NULL,
+    NULL,
+    test_rule_basic,
+    NULL,
+    NULL
+  };
+
 static void
 setup (struct fixture *fixture, gconstpointer user_data)
 {
@@ -69,8 +85,8 @@ setup (struct fixture *fixture, gconstpointer user_data)
   smie_prec2_grammar_free (prec2);
 
   fixture->indenter = smie_indenter_new (grammar,
-					 2,
-					 &test_common_cursor_functions);
+					 &test_common_cursor_functions,
+					 &test_rules);
 
   fd = open (INPUT_FILE, O_RDONLY);
   g_assert (fd >= 0);

@@ -71,6 +71,22 @@ G_DEFINE_TYPE (EditorApplication, editor_application, GTK_TYPE_APPLICATION);
 G_DEFINE_TYPE (EditorApplicationWindow, editor_application_window,
                GTK_TYPE_APPLICATION_WINDOW);
 
+static gint
+editor_rule_basic (void)
+{
+  return 2;
+}
+
+static const smie_rule_functions_t editor_rules =
+  {
+    NULL,
+    NULL,
+    NULL,
+    editor_rule_basic,
+    NULL,
+    NULL
+  };
+
 static const gchar *grammar_filename;
 
 static void
@@ -129,8 +145,8 @@ set_indenter (EditorApplicationWindow *window, const gchar *filename)
 
   window->indenter
     = smie_indenter_new (grammar,
-			 2,
-			 &smie_gtk_source_buffer_cursor_functions);
+			 &smie_gtk_source_buffer_cursor_functions,
+			 &editor_rules);
 }
 
 static void
