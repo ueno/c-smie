@@ -21,6 +21,7 @@
 #endif
 
 #include "smie-indenter.h"
+#include "smie-private.h"
 
 /**
  * SECTION:smie-indenter
@@ -184,6 +185,13 @@ smie_indent_keyword (smie_indenter_t *indenter, gpointer context)
   symbol_class = smie_grammar_get_symbol_class (indenter->grammar, symbol);
   if (symbol_class == SMIE_SYMBOL_CLASS_OPENER)
     {
+      if (indenter->rules->before)
+	{
+	  gint indent = indenter->rules->before (symbol->name);
+	  if (indent >= 0)
+	    return indent;
+	}
+
       /* FIXME: Skip comments.  */
       if (smie_indent_starts_line (indenter, context))
 	return -1;
@@ -217,7 +225,7 @@ smie_indent_keyword (smie_indenter_t *indenter, gpointer context)
   g_free (parent_token);
 
   /* For later calls to smie_indent_virtual, place the cursor at the
-     beginnning of the first token on the line.  */
+     beginning of the first token on the line.  */
   if (indenter->functions->ends_line (context))
     indenter->functions->forward_char (context);
   indenter->functions->forward_comment (context);
@@ -286,6 +294,13 @@ smie_indent_after_keyword (smie_indenter_t *indenter, gpointer context)
       return -1;
     }
 
+  if (indenter->rules->after)
+    {
+      gint indent = indenter->rules->after (symbol->name);
+      if (indent >= 0)
+	return indent;
+    }
+
   symbol_class = smie_grammar_get_symbol_class (indenter->grammar, symbol);
   if (symbol_class == SMIE_SYMBOL_CLASS_CLOSER)
     {
@@ -294,7 +309,7 @@ smie_indent_after_keyword (smie_indenter_t *indenter, gpointer context)
     }
 
   /* For later calls to smie_indent_virtual, place the cursor at the
-     beginnning of the first token on the line.  */
+     beginning of the first token on the line.  */
   if (indenter->functions->ends_line (context))
     indenter->functions->forward_char (context);
   indenter->functions->forward_comment (context);
