@@ -35,6 +35,8 @@ AM_CONDITIONAL([ENABLE_GTK_DOC], false)
 AC_CONFIG_MACRO_DIRS([m4])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([Makefile
+smie.pc
+smie-gtksourceview.pc
 docs/Makefile
 docs/references/Makefile
 docs/references/smie/Makefile])
